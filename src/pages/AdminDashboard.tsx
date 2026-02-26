@@ -36,14 +36,14 @@ const statusConfig = {
   cancelled: { label: 'Cancelado', icon: XCircle, className: 'bg-destructive/10 text-destructive border-destructive/20', pulse: false },
 };
 
-type AdminTab = 'overview' | 'orders' | 'resellers' | 'products' | 'academy' | 'licenses';
+type AdminTab = 'overview' | 'orders' | 'customers' | 'products' | 'academy' | 'licenses';
 type OrderFilter = 'pending' | 'completed' | 'cancelled';
 
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
-  const { orders, resellers, wallets, transactions, products, stats, isLoading, updateOrderStatus, updateProduct, createProduct, deleteReseller, updateResellerBalance } = useAdminData();
+  const { orders, resellers: customers, wallets, transactions, products, stats, isLoading, updateOrderStatus, updateProduct, createProduct, deleteReseller: deleteCustomer, updateResellerBalance: updateCustomerBalance } = useAdminData();
 
   const [cancelModal, setCancelModal] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -54,13 +54,13 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [orderFilter, setOrderFilter] = useState<OrderFilter>('pending');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedReseller, setSelectedReseller] = useState<Profile | null>(null);
-  const [resellerSearch, setResellerSearch] = useState('');
-  const [resellerOrderFilter, setResellerOrderFilter] = useState<OrderFilter>('pending');
+  const [selectedCustomer, setSelectedCustomer] = useState<Profile | null>(null);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerOrderFilter, setCustomerOrderFilter] = useState<OrderFilter>('pending');
   const [inviteModal, setInviteModal] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [deleteResellerId, setDeleteResellerId] = useState<string | null>(null);
+  const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
 
   // Balance Edit State
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
@@ -73,9 +73,9 @@ const AdminDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Invite function (Server-side / Edge Function)
-  const inviteReseller = async (name: string, email: string) => {
+  const inviteCustomer = async (name: string, email: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('invite-reseller', {
+      const { data, error } = await supabase.functions.invoke('invite-customer', {
         body: {
           email: email,
           fullName: name
@@ -94,15 +94,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteReseller = async () => {
-    if (!deleteResellerId) return;
+  const handleDeleteCustomer = async () => {
+    if (!deleteCustomerId) return;
     try {
-      await deleteReseller(deleteResellerId);
-      toast.success('Revendedor excluído com sucesso!');
-      setDeleteResellerId(null);
+      await deleteCustomer(deleteCustomerId);
+      toast.success('Cliente excluído com sucesso!');
+      setDeleteCustomerId(null);
     } catch (error: any) {
-      console.error('Erro ao excluir revendedor:', error);
-      toast.error('Erro ao excluir revendedor: ' + (error.message || 'Erro ao deletar usuário'));
+      console.error('Erro ao excluir cliente:', error);
+      toast.error('Erro ao excluir cliente: ' + (error.message || 'Erro ao deletar usuário'));
     }
   }
 
@@ -122,7 +122,7 @@ const AdminDashboard = () => {
         toast.error('Valor inválido');
         return;
       }
-      await updateResellerBalance(editingBalanceUser.id, val);
+      await updateCustomerBalance(editingBalanceUser.id, val);
       toast.success('Saldo atualizado com sucesso!');
       setIsBalanceModalOpen(false);
     } catch (error: any) {
@@ -137,7 +137,7 @@ const AdminDashboard = () => {
     .filter(t => t.type === 'purchase')
     .reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
 
-  const activeResellersCount = resellers.filter(u => u.is_active).length;
+  const activeCustomersCount = customers.filter(u => u.is_active).length;
   const pendingCount = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
   const completedCount = orders.filter(o => o.status === 'completed').length;
   const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
@@ -242,7 +242,7 @@ const AdminDashboard = () => {
   const tabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
     { key: 'overview', label: 'Visão Geral', icon: BarChart3 },
     { key: 'orders', label: 'Pedidos', icon: Package },
-    { key: 'resellers', label: 'Revendedores', icon: Users },
+    { key: 'customers', label: 'Clientes', icon: Users },
     { key: 'products', label: 'Produtos', icon: ShoppingCart },
     { key: 'academy', label: 'Academy', icon: GraduationCap },
     { key: 'licenses', label: 'Licenças', icon: Key },
@@ -329,10 +329,10 @@ const AdminDashboard = () => {
               </div>
               <div className="rounded-2xl border border-border bg-card p-5">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Revendedores</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Clientes</p>
                   <Users className="h-4 w-4 text-foreground" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{stats?.active_resellers || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{stats?.total_customers || 0}</p>
               </div>
             </div>
 
@@ -513,38 +513,38 @@ const AdminDashboard = () => {
           </section>
         )}
 
-        {/* ============ RESELLERS TAB ============ */}
-        {activeTab === 'resellers' && (
+        {/* ============ CUSTOMERS TAB ============ */}
+        {activeTab === 'customers' && (
           <section>
-            {!selectedReseller ? (
+            {!selectedCustomer ? (
               <>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
-                    Gerenciar Revendedores
+                    Gerenciar Clientes
                   </h2>
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="relative flex-1 sm:w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Buscar por nome ou email..."
-                        value={resellerSearch}
-                        onChange={e => setResellerSearch(e.target.value)}
+                        value={customerSearch}
+                        onChange={e => setCustomerSearch(e.target.value)}
                         className="pl-9 bg-secondary border-border h-9 text-sm"
                       />
                     </div>
                     <Button size="sm" onClick={() => setInviteModal(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 shrink-0">
                       <UserPlus className="h-4 w-4 mr-1.5" />
-                      <span className="hidden sm:inline">Novo Revendedor</span>
+                      <span className="hidden sm:inline">Novo Cliente</span>
                       <span className="sm:hidden">Novo</span>
                     </Button>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {resellers
+                  {customers
                     .filter(r => {
-                      if (!resellerSearch) return true;
-                      const q = resellerSearch.toLowerCase();
+                      if (!customerSearch) return true;
+                      const q = customerSearch.toLowerCase();
                       return (r.full_name || '').toLowerCase().includes(q) || (r.email || '').toLowerCase().includes(q);
                     })
                     .map(r => {
@@ -559,7 +559,7 @@ const AdminDashboard = () => {
                       return (
                         <div
                           key={r.id}
-                          onClick={() => { setSelectedReseller(r); setResellerOrderFilter('pending'); }}
+                          onClick={() => { setSelectedCustomer(r); setCustomerOrderFilter('pending'); }}
                           className="relative group rounded-2xl border border-border bg-card p-5 cursor-pointer transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
                         >
                           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -568,10 +568,10 @@ const AdminDashboard = () => {
                               variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setDeleteResellerId(r.id);
+                                setDeleteCustomerId(r.id);
                               }}
                               className="h-8 w-8 p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                              title="Excluir Revendedor"
+                              title="Excluir Cliente"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -634,9 +634,9 @@ const AdminDashboard = () => {
                 </div>
               </>
             ) : (
-              /* ============ RESELLER DETAIL VIEW ============ */
+              /* ============ CUSTOMER DETAIL VIEW ============ */
               (() => {
-                const r = selectedReseller;
+                const r = selectedCustomer;
                 const wallet = wallets.find(w => w.user_id === r.id);
                 const userOrders = orders.filter(o => o.user_id === r.id);
                 const userPending = userOrders.filter(o => o.status === 'pending' || o.status === 'processing');
@@ -646,28 +646,28 @@ const AdminDashboard = () => {
                 const totalDeposited = userTx.filter(t => t.type === 'deposit').reduce((s, t) => s + Math.abs(Number(t.amount)), 0);
                 const initials = (r.full_name || 'U').split(' ').map((n: string) => n[0]).join('').slice(0, 2);
 
-                const resellerOrderFilterTabs: { key: OrderFilter; label: string; count: number }[] = [
+                const customerOrderFilterTabs: { key: OrderFilter; label: string; count: number }[] = [
                   { key: 'pending', label: 'Pendentes', count: userPending.length },
                   { key: 'completed', label: 'Entregues', count: userCompleted.length },
                   { key: 'cancelled', label: 'Cancelados', count: userCancelled.length },
                 ];
 
-                const filteredResellerOrders =
-                  resellerOrderFilter === 'pending' ? userPending :
-                    resellerOrderFilter === 'completed' ? userCompleted : userCancelled;
+                const filteredCustomerOrders =
+                  customerOrderFilter === 'pending' ? userPending :
+                    customerOrderFilter === 'completed' ? userCompleted : userCancelled;
 
                 return (
                   <div className="space-y-4">
                     {/* Back button */}
                     <button
-                      onClick={() => setSelectedReseller(null)}
+                      onClick={() => setSelectedCustomer(null)}
                       className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ArrowLeft className="h-4 w-4" />
-                      Voltar para revendedores
+                      Voltar para clientes
                     </button>
 
-                    {/* Reseller header */}
+                    {/* Customer header */}
                     <div className="rounded-2xl border border-border bg-card p-5">
                       <div className="flex items-start gap-4">
                         <div className="relative">
@@ -727,11 +727,11 @@ const AdminDashboard = () => {
 
                     {/* Order filter tabs */}
                     <div className="flex gap-2">
-                      {resellerOrderFilterTabs.map(tab => (
+                      {customerOrderFilterTabs.map(tab => (
                         <button
                           key={tab.key}
-                          onClick={() => setResellerOrderFilter(tab.key)}
-                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${resellerOrderFilter === tab.key
+                          onClick={() => setCustomerOrderFilter(tab.key)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${customerOrderFilter === tab.key
                             ? tab.key === 'pending' ? 'bg-warning/10 text-warning' : tab.key === 'completed' ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'
                             : 'bg-secondary text-muted-foreground hover:text-foreground'
                             }`}
@@ -743,10 +743,10 @@ const AdminDashboard = () => {
 
                     {/* Order list */}
                     <div className="space-y-2">
-                      {filteredResellerOrders.length === 0 ? (
+                      {filteredCustomerOrders.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground text-sm">Nenhum pedido nesta categoria.</div>
                       ) : (
-                        filteredResellerOrders.map(order => {
+                        filteredCustomerOrders.map(order => {
                           const s = statusConfig[order.status] || statusConfig.pending;
                           const StatusIcon = s.icon;
                           return (
@@ -1109,7 +1109,7 @@ const AdminDashboard = () => {
                 Cancelar
               </Button>
               <Button
-                onClick={() => inviteReseller(inviteName, inviteEmail)}
+                onClick={() => inviteCustomer(inviteName, inviteEmail)}
                 className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               >
                 <Send className="h-4 w-4 mr-1.5" />
@@ -1119,25 +1119,25 @@ const AdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Delete Reseller Modal */}
-      <Dialog open={!!deleteResellerId} onOpenChange={() => setDeleteResellerId(null)}>
+      {/* Delete Customer Modal */}
+      <Dialog open={!!deleteCustomerId} onOpenChange={() => setDeleteCustomerId(null)}>
         <DialogContent className="bg-card border-border sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <UserX className="h-5 w-5" />
-              Excluir Revendedor?
+              Excluir Cliente?
             </DialogTitle>
             <DialogDescription className="text-foreground/80">
               Tem certeza? Isso apagará TODO o histórico financeiro, pedidos e saldo deste usuário permanentemente. Essa ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 justify-end pt-4">
-            <Button variant="ghost" onClick={() => setDeleteResellerId(null)}>
+            <Button variant="ghost" onClick={() => setDeleteCustomerId(null)}>
               Cancelar
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDeleteReseller}
+              onClick={handleDeleteCustomer}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold"
             >
               <Trash2 className="h-4 w-4 mr-1.5" />
