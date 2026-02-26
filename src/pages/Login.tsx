@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,6 +7,22 @@ import { Zap, Shield, Headphones, CheckCircle2 } from 'lucide-react';
 const Login = () => {
   const navigate = useNavigate();
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const testimonials = [
     {
@@ -38,6 +54,60 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-black overflow-x-hidden">
+      {/* Sticky Navbar */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-black/80 backdrop-blur-lg border-b border-slate-900/50' : 'bg-transparent'
+      }`}>
+        <div className="container mx-auto max-w-7xl px-6">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <button 
+              onClick={() => scrollToSection('hero')}
+              className="text-lg font-medium text-white hover:text-slate-300 transition-colors"
+            >
+              Top Créditos
+            </button>
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-8">
+              <button
+                onClick={() => scrollToSection('hero')}
+                className="text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Início
+              </button>
+              <button
+                onClick={() => scrollToSection('pacotes')}
+                className="text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Pacotes
+              </button>
+              <button
+                onClick={() => scrollToSection('leaderboard')}
+                className="text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Leaderboard
+              </button>
+              <button
+                onClick={() => navigate('/ajuda')}
+                className="text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                Suporte
+              </button>
+            </div>
+
+            {/* CTA Button */}
+            <Button
+              onClick={() => navigate('/dashboard')}
+              variant="ghost"
+              className="text-sm text-slate-400 hover:text-white hover:bg-slate-900/50"
+            >
+              Minha Conta
+            </Button>
+          </div>
+        </div>
+      </nav>
+
       {/* Subtle Background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-black to-black" />
@@ -45,7 +115,7 @@ const Login = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative px-6 pt-32 pb-48">
+      <section id="hero" className="relative px-6 pt-32 pb-48">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
             <h1 className="text-7xl md:text-8xl font-light tracking-tight text-white">
@@ -60,10 +130,10 @@ const Login = () => {
             <div className="pt-8">
               <Button
                 size="lg"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => scrollToSection('pacotes')}
                 className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
               >
-                Acessar plataforma
+                Começar Agora
               </Button>
             </div>
 
@@ -89,7 +159,7 @@ const Login = () => {
       </section>
 
       {/* Features */}
-      <section className="relative px-6 py-32 border-y border-slate-900">
+      <section id="pacotes" className="relative px-6 py-32 border-y border-slate-900">
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-4 gap-12">
             <div className="text-center space-y-4">
@@ -136,7 +206,7 @@ const Login = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="relative px-6 py-32">
+      <section id="leaderboard" className="relative px-6 py-32">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-light text-white mb-4">

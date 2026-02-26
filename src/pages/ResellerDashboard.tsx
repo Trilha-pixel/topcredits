@@ -123,6 +123,62 @@ const ResellerDashboard = () => {
         onSettings={() => setSettingsModal(true)}
       />
 
+      {/* Floating Navbar */}
+      <nav className="sticky top-14 z-40 border-b border-white/5 bg-black/50 backdrop-blur-lg">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center justify-between h-12">
+            {/* Logo - Left */}
+            <div className="flex items-center">
+              <span className="text-sm font-medium text-white">Top Créditos</span>
+            </div>
+
+            {/* Navigation Links - Center */}
+            <div className="hidden md:flex items-center gap-8">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="text-sm font-medium text-white transition-colors"
+              >
+                Início
+              </button>
+              <button
+                onClick={() => navigate('/pedidos')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Meus Pedidos
+              </button>
+              <button
+                onClick={() => navigate('/licencas')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Licenças
+              </button>
+              <button
+                onClick={() => navigate('/academy')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Academy
+              </button>
+              <button
+                onClick={() => navigate('/ajuda')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Suporte
+              </button>
+            </div>
+
+            {/* Profile Icon - Right */}
+            <div className="flex items-center">
+              <button
+                onClick={() => setSettingsModal(true)}
+                className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+              >
+                {initials}
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
         {/* Greeting - Minimalista */}
         <div className="space-y-2">
@@ -133,37 +189,53 @@ const ResellerDashboard = () => {
         </div>
 
         {/* Balance Hero - Redesenhado */}
-        <section className="rounded-3xl border border-border bg-card p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Saldo Disponível</p>
-              <h2 className="text-5xl font-light text-foreground">R$ {balance.toFixed(2)}</h2>
+        <section className="rounded-md border border-border bg-[#0A0A0A] p-10">
+          <div className="flex items-center justify-between mb-10">
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Saldo Disponível</p>
+              <h2 className="text-6xl font-light text-foreground tracking-tight" style={{ letterSpacing: '-0.03em' }}>
+                R$ {balance.toFixed(2)}
+              </h2>
             </div>
-            <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-full">
+            <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-md px-8 h-12 font-bold" style={{ letterSpacing: '-0.01em' }}>
               Depositar
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-6 pt-6 border-t border-border">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Gasto Total</p>
-              <p className="text-xl font-medium">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
+          <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border/50">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Gasto Total</p>
+              <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Pedidos</p>
-              <p className="text-xl font-medium">{orders.length}</p>
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Pedidos</p>
+              <p className="text-2xl font-light text-foreground">{orders.length}</p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Último Depósito</p>
-              <p className="text-xl font-medium">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Último Depósito</p>
+              <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
             </div>
           </div>
         </section>
 
         {/* Top Buyers Ranking - Premium Design */}
         <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-light text-foreground">Top Compradores</h2>
-            <p className="text-sm text-muted-foreground mt-1">Os maiores investidores da plataforma</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-light text-foreground">Top Compradores</h2>
+              <p className="text-sm text-muted-foreground mt-1">Os maiores investidores da plataforma</p>
+            </div>
+            {/* Filtros Rápidos */}
+            <div className="flex items-center gap-2">
+              <button className="px-3 py-1.5 text-xs font-medium text-foreground bg-primary/10 rounded-md border border-primary/20">
+                Geral
+              </button>
+              <button className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 rounded-md transition-colors">
+                Mensal
+              </button>
+              <button className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 rounded-md transition-colors">
+                Semanal
+              </button>
+            </div>
           </div>
           <div className="rounded-3xl border border-border bg-[#050505] p-6">
             <div className="grid grid-cols-1 gap-3">
@@ -267,58 +339,58 @@ const ResellerDashboard = () => {
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
             onClick={() => navigate('/academy')}
-            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 cursor-pointer hover:border-primary/40 transition-all"
+            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-primary/40 transition-all"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-medium text-foreground mb-2">Academy</h3>
-            <p className="text-sm text-muted-foreground">Aprenda estratégias para escalar sua revenda</p>
+            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Academy</h3>
+            <p className="text-sm text-muted-foreground font-medium">Aprenda estratégias para escalar sua revenda</p>
           </div>
 
           <div
             onClick={() => navigate('/licencas')}
-            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 cursor-pointer hover:border-accent/40 transition-all"
+            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-accent/40 transition-all"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center">
-                <Key className="h-6 w-6 text-accent" />
+              <div className="h-12 w-12 rounded-md bg-accent/10 flex items-center justify-center">
+                <Key className="h-6 w-6 text-accent" strokeWidth={1.5} />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-medium text-foreground mb-2">Licenças Lovable</h3>
-            <p className="text-sm text-muted-foreground">Gere e gerencie licenças da extensão</p>
+            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Licenças Lovable</h3>
+            <p className="text-sm text-muted-foreground font-medium">Gere e gerencie licenças da extensão</p>
           </div>
 
           <div
             onClick={() => navigate('/pedidos')}
-            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 cursor-pointer hover:border-blue-500/40 transition-all"
+            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-blue-500/40 transition-all"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-blue-500" />
+              <div className="h-12 w-12 rounded-md bg-blue-500/10 flex items-center justify-center">
+                <Receipt className="h-6 w-6 text-blue-500" strokeWidth={1.5} />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-500 group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-medium text-foreground mb-2">Meus Pedidos</h3>
-            <p className="text-sm text-muted-foreground">Acompanhe o status dos seus pedidos</p>
+            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Meus Pedidos</h3>
+            <p className="text-sm text-muted-foreground font-medium">Acompanhe o status dos seus pedidos</p>
           </div>
 
           <div
             onClick={() => navigate('/ajuda')}
-            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 cursor-pointer hover:border-orange-500/40 transition-all"
+            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-orange-500/40 transition-all"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-2xl bg-orange-500/10 flex items-center justify-center">
-                <Gift className="h-6 w-6 text-orange-500" />
+              <div className="h-12 w-12 rounded-md bg-orange-500/10 flex items-center justify-center">
+                <Gift className="h-6 w-6 text-orange-500" strokeWidth={1.5} />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-orange-500 group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-medium text-foreground mb-2">Central de Ajuda</h3>
-            <p className="text-sm text-muted-foreground">Tire suas dúvidas e fale com o suporte</p>
+            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Central de Ajuda</h3>
+            <p className="text-sm text-muted-foreground font-medium">Tire suas dúvidas e fale com o suporte</p>
           </div>
         </section>
 
