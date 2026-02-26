@@ -10,6 +10,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Academy from "./pages/Academy";
 import Pacotes from "./pages/Pacotes";
 import Licencas from "./pages/Licencas";
+import MyOrders from "./pages/MyOrders";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,26 +45,12 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <DashboardRouter />
-              </ProtectedRoute>
-            } />
-            <Route path="/academy" element={
-              <ProtectedRoute>
-                <Academy />
-              </ProtectedRoute>
-            } />
-            <Route path="/pacotes" element={
-              <ProtectedRoute>
-                <Pacotes />
-              </ProtectedRoute>
-            } />
-            <Route path="/licencas" element={
-              <ProtectedRoute>
-                <Licencas />
-              </ProtectedRoute>
-            } />
+            <Route path="/dashboard" element={<DashboardRouter />} />
+            <Route path="/academy" element={<Academy />} />
+            <Route path="/pacotes" element={<Pacotes />} />
+            <Route path="/licencas" element={<Licencas />} />
+            <Route path="/pedidos" element={<MyOrders />} />
+            <Route path="/ajuda" element={<HelpCenter />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

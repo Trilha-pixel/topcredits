@@ -1,73 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Zap, Shield, Headphones, CheckCircle2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isMagicLink, setIsMagicLink] = useState(false);
-  const { login, user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/dashboard');
-      }
-    });
-  }, [user, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      if (isMagicLink) {
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: window.location.origin + '/dashboard',
-          },
-        });
-        if (error) throw error;
-        toast.success(`Verifique seu e-mail (${email}) para acessar`);
-      } else {
-        const { error } = await login(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            setError('Credenciais inválidas.');
-          } else {
-            throw error;
-          }
-        }
-      }
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Erro ao autenticar.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const scrollToLogin = () => {
-    document.getElementById('login-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const [testimonialIndex, setTestimonialIndex] = useState(0);
 
   const testimonials = [
@@ -122,7 +60,7 @@ const Login = () => {
             <div className="pt-8">
               <Button
                 size="lg"
-                onClick={scrollToLogin}
+                onClick={() => navigate('/dashboard')}
                 className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
               >
                 Acessar plataforma
@@ -235,88 +173,29 @@ const Login = () => {
         </div>
       </section>
 
-      {/* Login Section */}
-      <section id="login-section" className="relative px-6 py-32 border-t border-slate-900">
-        <div className="container mx-auto max-w-md">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-light text-white mb-2">
-              Acessar plataforma
-            </h2>
-            <p className="text-slate-500">Entre com suas credenciais</p>
-          </div>
+      {/* CTA Section */}
+      <section className="relative px-6 py-32 border-t border-slate-900">
+        <div className="container mx-auto max-w-3xl text-center">
+          <h2 className="text-4xl md:text-5xl font-light text-white mb-6">
+            Pronto para começar?
+          </h2>
+          <p className="text-lg text-slate-400 mb-12">
+            Acesse a plataforma e gerencie seus créditos Lovable de forma simples e segura.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => navigate('/dashboard')}
+            className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
+          >
+            Acessar dashboard
+          </Button>
+        </div>
+      </section>
 
-          <Card className="p-8 bg-slate-950/50 backdrop-blur-sm border-slate-900">
-            <form onSubmit={handleSubmit} className="space-y-6">
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm text-slate-400">E-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    className="h-12 bg-slate-900/50 border-slate-800 focus:border-slate-700 text-white rounded-lg"
-                    required
-                  />
-                </div>
-
-                {!isMagicLink && (
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm text-slate-400">Senha</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="h-12 bg-slate-900/50 border-slate-800 focus:border-slate-700 text-white rounded-lg"
-                      required={!isMagicLink}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {error && (
-                <div className="p-3 rounded-lg bg-red-950/50 border border-red-900/50 text-red-400 text-sm text-center">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 bg-white text-black hover:bg-slate-200 rounded-full font-medium transition-all"
-              >
-                {loading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/20 border-t-black" />
-                ) : (
-                  isMagicLink ? 'Enviar link de acesso' : 'Continuar'
-                )}
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-900" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-slate-950 px-3 text-slate-600">ou</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full text-slate-500 hover:text-slate-300 hover:bg-slate-900/50 text-sm"
-                onClick={() => setIsMagicLink(!isMagicLink)}
-              >
-                {isMagicLink ? 'Usar senha' : 'Acessar sem senha'}
-              </Button>
-            </form>
-          </Card>
-
-          <div className="mt-12 text-center space-y-4">
+      {/* Footer */}
+      <footer className="relative px-6 py-12 border-t border-slate-900">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-6 text-xs text-slate-600">
               <a href="#" className="hover:text-slate-400 transition-colors">Termos de Uso</a>
               <span>•</span>
@@ -327,7 +206,7 @@ const Login = () => {
             </p>
           </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
 };
