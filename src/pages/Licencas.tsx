@@ -243,10 +243,15 @@ const Licencas = () => {
 
   const initials = user?.full_name?.substring(0, 2).toUpperCase() || 'AD';
 
-  const statusConfig = {
-    Ativa: { label: 'Ativa', icon: CheckCircle2, className: 'bg-accent/10 text-accent border-accent/20' },
-    Expirada: { label: 'Expirada', icon: Clock, className: 'bg-warning/10 text-warning border-warning/20' },
-    Bloqueada: { label: 'Bloqueada', icon: Lock, className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
+    'Ativa': { label: 'Ativa', icon: CheckCircle2, className: 'bg-accent/10 text-accent border-accent/20' },
+    'Expirada': { label: 'Expirada', icon: Clock, className: 'bg-warning/10 text-warning border-warning/20' },
+    'Bloqueada': { label: 'Bloqueada', icon: Lock, className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  };
+
+  // Função helper para obter config de status com fallback
+  const getStatusConfig = (status: string) => {
+    return statusConfig[status] || statusConfig['Expirada']; // Fallback para Expirada
   };
 
   const activeLicenses = licenses.filter(l => l.status === 'Ativa').length;
@@ -605,7 +610,7 @@ const Licencas = () => {
           ) : (
             <div className="space-y-4">
               {licenses.map(license => {
-                const s = statusConfig[license.status];
+                const s = getStatusConfig(license.status);
                 const StatusIcon = s.icon;
                 
                 return (

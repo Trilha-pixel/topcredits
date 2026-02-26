@@ -116,11 +116,16 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
       }
 
       toast.success('Conta criada com sucesso!', {
-        description: 'Você já pode fazer login'
+        description: 'Você já está logado e pode começar a comprar'
       });
 
-      // Switch to login mode
-      setMode('login');
+      // 4. Login automático já está feito pelo signUp
+      // Apenas fecha o modal e chama onSuccess
+      onOpenChange(false);
+      onSuccess?.();
+      
+      // Reset form
+      setEmail('');
       setPassword('');
       setFullName('');
       setPhone('');
