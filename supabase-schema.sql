@@ -17,18 +17,26 @@ CREATE TABLE public.profiles (
 -- RLS: Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- Função auxiliar para verificar se é admin (evita recursão infinita)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE id = auth.uid()
+    AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Política: Usuários podem ver seu próprio perfil
 CREATE POLICY "Users can view own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 
--- Política: Admins podem ver todos os perfis
+-- Política: Admins podem ver todos os perfis (usando função segura)
 CREATE POLICY "Admins can view all profiles" ON public.profiles
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  FOR SELECT USING (public.is_admin());
 
 -- Trigger para criar profile automaticamente após signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
