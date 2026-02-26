@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResellerData } from '@/hooks/useResellerData';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Receipt, RefreshCw, Package, Clock, CheckCircle2, XCircle, Search } from 'lucide-react';
+import { ArrowLeft, Receipt, RefreshCw, Package, Clock, CheckCircle2, XCircle, Search, Headphones, ChevronDown, Settings, GraduationCap, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import DashboardHeader from '@/components/reseller/DashboardHeader';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import OrderDetailSheet from '@/components/reseller/OrderDetailSheet';
 import { Order } from '@/types';
+import logo from '@/assets/logo-neon.png';
 
 type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
 
@@ -86,14 +87,103 @@ const MyOrders = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader
-        userName={user?.full_name || ''}
-        initials={initials}
-        breadcrumb="Meus Pedidos"
-        onLogout={handleLogout}
-        onAcademyClick={() => navigate('/academy')}
-        onSettings={() => {}}
-      />
+      {/* Floating Navbar */}
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-lg">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center justify-between h-14">
+            {/* Logo - Left */}
+            <div className="flex items-center gap-3">
+              <img
+                src={logo}
+                alt="Top Credits"
+                className="h-10 w-10 object-contain"
+                style={{ filter: 'drop-shadow(0 0 8px hsl(263 70% 66% / 0.6)) drop-shadow(0 0 20px hsl(263 70% 66% / 0.25))' }}
+              />
+              <span className="text-sm font-medium text-white">Top Créditos</span>
+            </div>
+
+            {/* Navigation Links - Center */}
+            <div className="hidden md:flex items-center gap-8">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Início
+              </button>
+              <button
+                onClick={() => navigate('/pedidos')}
+                className="text-sm font-medium text-white transition-colors"
+              >
+                Meus Pedidos
+              </button>
+              <button
+                onClick={() => navigate('/licencas')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Licenças
+              </button>
+              <button
+                onClick={() => navigate('/academy')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Academy
+              </button>
+              <button
+                onClick={() => navigate('/ajuda')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Suporte
+              </button>
+            </div>
+
+            {/* Profile Menu - Right */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/ajuda')}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <Headphones className="h-4 w-4" />
+              </button>
+              
+              <div className="h-5 w-px bg-white/10" />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
+                    <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
+                      {initials}
+                    </div>
+                    <span className="text-xs font-medium text-white hidden sm:block max-w-[120px] truncate">
+                      {user?.full_name}
+                    </span>
+                    <ChevronDown className="h-3 w-3 text-gray-400" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium text-foreground">{user?.full_name}</p>
+                    <p className="text-xs text-muted-foreground">Cliente</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Configurações
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/academy')} className="gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Academy
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </nav>
 
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-8">
         {/* Back Button */}
