@@ -1,0 +1,704 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import DashboardHeader from '@/components/reseller/DashboardHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Key, Plus, Copy, Check, Clock, CheckCircle2, Gift, Sparkles, Calendar, Lock, Unlock, Search, RefreshCw, Coins, DollarSign, ArrowLeft, Download, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
+import { licensesAPI, License, Plan } from '@/lib/licenses-api';
+import { supabase } from '@/lib/supabase';
+import { getLicenseErrorMessage, getTokenErrorMessage } from '@/lib/error-messages';
+
+const Licencas = () => {
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const [licenses, setLicenses] = useState<License[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [balance, setBalance] = useState<number>(0);
+  const [resellerName, setResellerName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [generateModal, setGenerateModal] = useState(false);
+  const [trialModal, setTrialModal] = useState(false);
+  const [buyTokensModal, setBuyTokensModal] = useState(false);
+  const [tokensToBuy, setTokensToBuy] = useState<number>(10);
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [clientName, setClientName] = useState('');
+  const [clientWhatsapp, setClientWhatsapp] = useState('');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const [total, setTotal] = useState(0);
+  const [limit] = useState(20);
+  const [offset, setOffset] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState<string>('');
+  const [loadingDownload, setLoadingDownload] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  useEffect(() => {
+    loadData();
+    loadDownloadUrl();
+  }, [statusFilter, searchQuery, offset]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [balanceData, plansData, licensesData] = await Promise.all([
+        licensesAPI.getBalance(),
+        licensesAPI.getPlans(),
+        licensesAPI.getLicenses({
+          status: statusFilter || undefined,
+          search: searchQuery || undefined,
+          limit,
+          offset,
+        }),
+      ]);
+
+      setBalance(balanceData.token_balance);
+      setResellerName(balanceData.reseller);
+      setPlans(plansData.plans);
+      setLicenses(licensesData.licenses);
+      setTotal(licensesData.total);
+    } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error(getLicenseErrorMessage(error, 'load'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadDownloadUrl = async () => {
+    try {
+      const data = await licensesAPI.getLatestRelease();
+      setDownloadUrl(data.download_url);
+    } catch (error: any) {
+      console.error('Erro ao carregar URL de download:', error);
+    }
+  };
+
+  const handleDownloadExtension = () => {
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank');
+      toast.success('Download iniciado!');
+    } else {
+      toast.error('URL de download não disponível');
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadData();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  const handleGenerateLicense = async () => {
+    if (!selectedPlan || !clientName.trim() || !clientWhatsapp.trim()) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    // Verificar se tem tokens suficientes
+    const plan = plans.find(p => p.id === selectedPlan);
+    if (plan && balance < plan.token_cost) {
+      toast.error(`Saldo insuficiente! Você precisa de ${plan.token_cost} tokens mas tem apenas ${balance}.`);
+      setGenerateModal(false);
+      setBuyTokensModal(true);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await licensesAPI.generateLicense({
+        plan_id: selectedPlan,
+        client_name: clientName,
+        client_whatsapp: clientWhatsapp,
+      });
+
+      toast.success(`Licença gerada com sucesso! Custo: ${result.token_cost} tokens`);
+      setGenerateModal(false);
+      setClientName('');
+      setClientWhatsapp('');
+      setSelectedPlan('');
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao gerar licença:', error);
+      toast.error(getLicenseErrorMessage(error, 'generate'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateTrialLicense = async () => {
+    setIsLoading(true);
+    try {
+      await licensesAPI.generateTrialLicense();
+      toast.success('Licença de teste gerada com sucesso!');
+      setTrialModal(false);
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao gerar teste:', error);
+      toast.error(getLicenseErrorMessage(error, 'trial'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyLicenseKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopiedKey(key);
+    toast.success('Chave copiada!');
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const blockLicense = async (licenseId: string) => {
+    try {
+      await licensesAPI.blockLicense(licenseId);
+      toast.success('Licença bloqueada com sucesso');
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao bloquear:', error);
+      toast.error(getLicenseErrorMessage(error, 'block'));
+    }
+  };
+
+  const unblockLicense = async (licenseId: string) => {
+    try {
+      await licensesAPI.unblockLicense(licenseId);
+      toast.success('Licença desbloqueada com sucesso');
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao desbloquear:', error);
+      toast.error(getLicenseErrorMessage(error, 'unblock'));
+    }
+  };
+
+  const handleBuyTokens = async () => {
+    if (!user?.id || tokensToBuy < 1) {
+      toast.error('Quantidade inválida. Informe quantos tokens deseja comprar.');
+      return;
+    }
+
+    const totalCost = tokensToBuy * 5; // R$ 5 por token
+
+    setIsLoading(true);
+    try {
+      // Verificar saldo atual
+      const { data: walletData, error: walletError } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (walletError) throw walletError;
+
+      const currentBalance = Number(walletData.balance);
+
+      if (currentBalance < totalCost) {
+        toast.error(
+          `Saldo insuficiente! Você precisa de R$ ${totalCost.toFixed(2)} mas tem apenas R$ ${currentBalance.toFixed(2)}. Faça um depósito primeiro.`,
+          { duration: 5000 }
+        );
+        setBuyTokensModal(false);
+        // Redirecionar para depósito
+        navigate('/dashboard');
+        setTimeout(() => {
+          toast.info('Clique em "Depositar" para adicionar saldo à sua conta');
+        }, 500);
+        return;
+      }
+
+      // Debitar do saldo e adicionar tokens
+      const { error: debitError } = await supabase.rpc('purchase_tokens', {
+        p_user_id: user.id,
+        p_tokens_amount: tokensToBuy,
+        p_total_cost: totalCost
+      });
+
+      if (debitError) throw debitError;
+
+      toast.success(`${tokensToBuy} tokens comprados com sucesso por R$ ${totalCost.toFixed(2)}!`);
+      setBuyTokensModal(false);
+      setTokensToBuy(10);
+      loadData();
+    } catch (error: any) {
+      console.error('Erro ao comprar tokens:', error);
+      toast.error(getTokenErrorMessage(error, 'buy'), { duration: 5000 });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initials = user?.full_name?.substring(0, 2).toUpperCase() || 'AD';
+
+  const statusConfig = {
+    Ativa: { label: 'Ativa', icon: CheckCircle2, className: 'bg-accent/10 text-accent border-accent/20' },
+    Expirada: { label: 'Expirada', icon: Clock, className: 'bg-warning/10 text-warning border-warning/20' },
+    Bloqueada: { label: 'Bloqueada', icon: Lock, className: 'bg-destructive/10 text-destructive border-destructive/20' },
+  };
+
+  const activeLicenses = licenses.filter(l => l.status === 'Ativa').length;
+  const expiredLicenses = licenses.filter(l => l.status === 'Expirada').length;
+  const blockedLicenses = licenses.filter(l => l.status === 'Bloqueada').length;
+
+  if (isLoading && licenses.length === 0) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <DashboardHeader
+        userName={user?.full_name || resellerName || 'Admin'}
+        initials={initials}
+        breadcrumb="Licenças Lovable"
+        onLogout={handleLogout}
+        onAcademyClick={() => navigate('/academy')}
+      />
+
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Key className="h-6 w-6 text-primary" />
+              Gerenciar Licenças
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Gere e gerencie licenças para a extensão Lovable
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => navigate('/dashboard')} 
+              variant="outline"
+              className="border-border hover:bg-secondary"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <Button 
+              onClick={() => setTrialModal(true)} 
+              variant="outline" 
+              className="border-accent/20 hover:bg-accent/10 text-accent"
+            >
+              <Gift className="h-4 w-4 mr-2" />
+              Teste Grátis
+            </Button>
+            <Button 
+              onClick={() => setGenerateModal(true)} 
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Gerar Licença
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-primary/5 p-6">
+            <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saldo Tokens</p>
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-4xl font-bold text-primary mb-4">{balance}</p>
+              <Button 
+                onClick={() => setBuyTokensModal(true)} 
+                size="sm" 
+                variant="outline" 
+                className="w-full border-primary/30 hover:bg-primary/10 text-primary hover:text-primary"
+              >
+                <Coins className="h-3.5 w-3.5 mr-2" />
+                Comprar Tokens
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-gradient-to-br from-accent/10 via-card to-accent/5 p-6">
+            <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-accent/10 blur-3xl" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Ativas</p>
+                <CheckCircle2 className="h-5 w-5 text-accent" />
+              </div>
+              <p className="text-4xl font-bold text-accent">{activeLicenses}</p>
+              <p className="text-xs text-muted-foreground mt-2">Licenças em uso</p>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Expiradas</p>
+              <Clock className="h-5 w-5 text-warning" />
+            </div>
+            <p className="text-4xl font-bold text-warning">{expiredLicenses}</p>
+            <p className="text-xs text-muted-foreground mt-2">Precisam renovação</p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Bloqueadas</p>
+              <Lock className="h-5 w-5 text-destructive" />
+            </div>
+            <p className="text-4xl font-bold text-destructive">{blockedLicenses}</p>
+            <p className="text-xs text-muted-foreground mt-2">Suspensas temporariamente</p>
+          </div>
+        </div>
+
+        {/* Download Extension Section */}
+        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-accent/5 p-6 md:p-8">
+          <div className="absolute top-0 right-0 h-64 w-64 bg-primary/10 rounded-full blur-3xl -z-0" />
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="h-16 md:h-20 w-16 md:w-20 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Download className="h-8 md:h-10 w-8 md:w-10 text-primary" />
+              </div>
+              <div className="text-center md:text-left">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1 md:mb-2">
+                  Extensão Lovable
+                </h3>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Baixe a versão mais recente da extensão para seus clientes
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={handleDownloadExtension}
+              disabled={!downloadUrl || loadingDownload}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 rounded-xl px-6 md:px-8 flex-shrink-0 w-full md:w-auto"
+            >
+              <Download className="h-5 w-5 mr-2" />
+              Baixar Extensão
+              <ExternalLink className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por cliente ou chave..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-11 h-12 bg-secondary/50 border-border rounded-xl"
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant={statusFilter === '' ? 'default' : 'outline'} 
+              size="default"
+              onClick={() => setStatusFilter('')}
+              className="rounded-xl"
+            >
+              Todos
+            </Button>
+            <Button 
+              variant={statusFilter === 'Ativa' ? 'default' : 'outline'} 
+              size="default"
+              onClick={() => setStatusFilter('Ativa')}
+              className="rounded-xl"
+            >
+              Ativas
+            </Button>
+            <Button 
+              variant={statusFilter === 'Expirada' ? 'default' : 'outline'} 
+              size="default"
+              onClick={() => setStatusFilter('Expirada')}
+              className="rounded-xl"
+            >
+              Expiradas
+            </Button>
+            <Button 
+              variant={statusFilter === 'Bloqueada' ? 'default' : 'outline'} 
+              size="default"
+              onClick={() => setStatusFilter('Bloqueada')}
+              className="rounded-xl"
+            >
+              Bloqueadas
+            </Button>
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="default"
+              className="rounded-xl"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Licenças Geradas ({total})
+          </h2>
+          
+          {licenses.length === 0 ? (
+            <div className="text-center py-20 rounded-3xl border border-dashed border-border bg-card/30">
+              <Key className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-lg text-muted-foreground mb-6">Nenhuma licença encontrada</p>
+              <Button onClick={() => setGenerateModal(true)} size="lg" className="bg-primary hover:bg-primary/90 rounded-xl">
+                <Plus className="h-4 w-4 mr-2" />
+                Gerar Primeira Licença
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {licenses.map(license => {
+                const s = statusConfig[license.status];
+                const StatusIcon = s.icon;
+                
+                return (
+                  <div key={license.id} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 hover:border-primary/30 transition-all duration-300">
+                    <div className="flex items-start gap-5">
+                      <div className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                        license.status === 'Ativa' ? 'bg-accent/10' : 
+                        license.status === 'Bloqueada' ? 'bg-destructive/10' : 'bg-warning/10'
+                      }`}>
+                        <StatusIcon className={`h-7 w-7 ${
+                          license.status === 'Ativa' ? 'text-accent' :
+                          license.status === 'Bloqueada' ? 'text-destructive' : 'text-warning'
+                        }`} />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 space-y-3">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-lg font-semibold text-foreground">{license.client_name}</span>
+                          <Badge variant="outline" className={`${s.className} px-3 py-1`}>
+                            <StatusIcon className="h-3 w-3 mr-1.5" />
+                            {s.label}
+                          </Badge>
+                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1">
+                            {license.plan}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                          <button 
+                            onClick={() => copyLicenseKey(license.key)} 
+                            className="flex items-center gap-2 hover:text-primary transition-colors font-mono bg-secondary/50 px-3 py-1.5 rounded-lg"
+                          >
+                            {copiedKey === license.key ? (
+                              <Check className="h-3.5 w-3.5 text-accent" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                            {license.key}
+                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Expira: {new Date(license.expires_at).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 flex-shrink-0">
+                        {license.status === 'Ativa' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => blockLicense(license.id)} 
+                            className="text-destructive hover:bg-destructive/10 h-10 w-10 p-0 rounded-xl" 
+                            title="Bloquear Licença"
+                          >
+                            <Lock className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {license.status === 'Bloqueada' && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => unblockLicense(license.id)} 
+                            className="text-accent hover:bg-accent/10 h-10 w-10 p-0 rounded-xl" 
+                            title="Desbloquear Licença"
+                          >
+                            <Unlock className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {total > limit && (
+            <div className="flex items-center justify-between pt-6 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {offset + 1} - {Math.min(offset + limit, total)} de {total}
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="default"
+                  className="rounded-xl"
+                  onClick={() => setOffset(Math.max(0, offset - limit))} 
+                  disabled={offset === 0}
+                >
+                  Anterior
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="default"
+                  className="rounded-xl"
+                  onClick={() => setOffset(offset + limit)} 
+                  disabled={offset + limit >= total}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <Dialog open={generateModal} onOpenChange={setGenerateModal}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Key className="h-5 w-5" />
+              Gerar Licença Paga
+            </DialogTitle>
+            <DialogDescription>Crie uma licença comercial. Tokens serão debitados automaticamente.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Plano</Label>
+              <select value={selectedPlan} onChange={e => setSelectedPlan(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <option value="">Selecione um plano</option>
+                {plans.map(plan => (
+                  <option key={plan.id} value={plan.id}>{plan.name} - {plan.token_cost} tokens ({plan.duration_days} dias)</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Nome do Cliente</Label>
+              <Input placeholder="João Silva" value={clientName} onChange={e => setClientName(e.target.value)} className="bg-secondary border-border" />
+            </div>
+            <div className="space-y-2">
+              <Label>WhatsApp do Cliente</Label>
+              <Input placeholder="5511999999999" value={clientWhatsapp} onChange={e => setClientWhatsapp(e.target.value)} className="bg-secondary border-border" />
+            </div>
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+              <p className="text-xs text-muted-foreground">Saldo atual: <span className="font-bold text-primary">{balance} tokens</span></p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setGenerateModal(false)}>Cancelar</Button>
+            <Button onClick={handleGenerateLicense} disabled={isLoading || !selectedPlan || !clientName || !clientWhatsapp} className="bg-primary hover:bg-primary/90">
+              <Key className="h-4 w-4 mr-2" />
+              Gerar Licença
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={trialModal} onOpenChange={setTrialModal}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Gift className="h-5 w-5" />
+              Gerar Teste Grátis
+            </DialogTitle>
+            <DialogDescription>Crie uma licença de teste temporária sem custo de tokens</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="rounded-lg bg-accent/5 border border-accent/20 p-4 text-center">
+              <Gift className="h-12 w-12 mx-auto mb-3 text-accent" />
+              <p className="text-sm text-muted-foreground">Esta licença será gerada gratuitamente e terá duração limitada para demonstração</p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setTrialModal(false)}>Cancelar</Button>
+            <Button onClick={handleGenerateTrialLicense} disabled={isLoading} className="bg-primary hover:bg-primary/90">
+              <Gift className="h-4 w-4 mr-2" />
+              Gerar Teste
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Buy Tokens Modal */}
+      <Dialog open={buyTokensModal} onOpenChange={setBuyTokensModal}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Coins className="h-5 w-5" />
+              Comprar Tokens
+            </DialogTitle>
+            <DialogDescription>
+              Cada token custa R$ 5,00 e será debitado do seu saldo
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Quantidade de Tokens</Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                value={tokensToBuy}
+                onChange={(e) => setTokensToBuy(Math.max(1, parseInt(e.target.value) || 1))}
+                className="bg-secondary border-border"
+              />
+            </div>
+
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tokens:</span>
+                <span className="font-semibold text-foreground">{tokensToBuy}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Preço unitário:</span>
+                <span className="font-semibold text-foreground">R$ 5,00</span>
+              </div>
+              <div className="border-t border-primary/20 pt-2 flex justify-between">
+                <span className="text-sm font-semibold text-foreground">Total:</span>
+                <span className="text-lg font-bold text-primary">R$ {(tokensToBuy * 5).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-accent/5 border border-accent/20 p-3">
+              <p className="text-xs text-muted-foreground">
+                O valor será debitado automaticamente do seu saldo na plataforma
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setBuyTokensModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleBuyTokens} 
+              disabled={isLoading || tokensToBuy < 1}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <DollarSign className="h-4 w-4 mr-2" />
+              Comprar por R$ {(tokensToBuy * 5).toFixed(2)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Licencas;

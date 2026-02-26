@@ -1,0 +1,328 @@
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useResellerData } from '@/hooks/useResellerData';
+import { useProducts } from '@/hooks/useProducts';
+import { Button } from '@/components/ui/button';
+import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles } from 'lucide-react';
+import DashboardHeader from '@/components/reseller/DashboardHeader';
+import { useNavigate } from 'react-router-dom';
+import BalanceCard from '@/components/reseller/BalanceCard';
+import ProductCard from '@/components/reseller/ProductCard';
+import OrderCard from '@/components/reseller/OrderCard';
+import TransactionTimeline from '@/components/reseller/TransactionTimeline';
+import DepositModal from '@/components/reseller/DepositModal';
+import PurchaseModal from '@/components/reseller/PurchaseModal';
+import OrderDetailSheet from '@/components/reseller/OrderDetailSheet';
+import SettingsModal from '@/components/reseller/SettingsModal';
+import { Product, Order } from '@/types';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+
+type Tab = 'home' | 'buy' | 'orders' | 'academy';
+type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
+
+const ResellerDashboard = () => {
+  const { user, balance, logout } = useAuth();
+  const navigate = useNavigate();
+  const { orders, transactions, isLoading: loadingData, refetch } = useResellerData(user?.id);
+  const { products, isLoading: loadingProducts } = useProducts();
+
+  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [depositModal, setDepositModal] = useState(false);
+  const [purchaseModal, setPurchaseModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderSheetOpen, setOrderSheetOpen] = useState(false);
+  const [settingsModal, setSettingsModal] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setTimeout(() => setIsRefreshing(false), 500);
+  }, [refetch]);
+
+  // Synchronize Realtime Updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('reseller-realtime-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` },
+        () => {
+          refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
+        () => {
+          refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `user_id=eq.${user.id}` },
+        () => {
+          // Wallet balance update
+          refetch();
+          // We also trigger a reload of page content to ensure balance from context is indirectly updated 
+          // (though refetch only updates local dashboard orders/transactions)
+          // For a true balance update, the user would need a refresh or we'd need to expose it in context.
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refetch]);
+
+  const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter);
+
+  const initials = user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
+
+  const handleSelectProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setPurchaseModal(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const orderFilterTabs: { key: OrderFilter; label: string }[] = [
+    { key: 'all', label: 'Todos' },
+    { key: 'pending', label: 'Pendentes' },
+    { key: 'completed', label: 'Concluídos' },
+    { key: 'cancelled', label: 'Cancelados' },
+  ];
+
+  if (loadingData || loadingProducts) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-20 sm:pb-6">
+      {/* Header */}
+      <DashboardHeader
+        userName={user?.full_name || ''}
+        initials={initials}
+        breadcrumb="Dashboard"
+        onLogout={handleLogout}
+        onAcademyClick={() => navigate('/academy')}
+        onSettings={() => setSettingsModal(true)}
+      />
+
+      <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
+        {/* Greeting - Minimalista */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-light text-foreground">
+            Olá, {user?.full_name ? user.full_name.split(' ')[0] : 'Revendedor'}
+          </h1>
+          <p className="text-muted-foreground">Gerencie seus créditos Lovable</p>
+        </div>
+
+        {/* Balance Hero - Redesenhado */}
+        <section className="rounded-3xl border border-border bg-card p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Saldo Disponível</p>
+              <h2 className="text-5xl font-light text-foreground">R$ {balance.toFixed(2)}</h2>
+            </div>
+            <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-full">
+              Depositar
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-6 pt-6 border-t border-border">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Gasto Total</p>
+              <p className="text-xl font-medium">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Pedidos</p>
+              <p className="text-xl font-medium">{orders.length}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Último Depósito</p>
+              <p className="text-xl font-medium">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Quick Actions - Minimalista */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            onClick={() => navigate('/academy')}
+            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 cursor-pointer hover:border-primary/40 transition-all"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-primary" />
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+            <h3 className="text-xl font-medium text-foreground mb-2">Academy</h3>
+            <p className="text-sm text-muted-foreground">Aprenda estratégias para escalar sua revenda</p>
+          </div>
+
+          <div
+            onClick={() => navigate('/licencas')}
+            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 cursor-pointer hover:border-accent/40 transition-all"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center">
+                <Key className="h-6 w-6 text-accent" />
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
+            </div>
+            <h3 className="text-xl font-medium text-foreground mb-2">Licenças Lovable</h3>
+            <p className="text-sm text-muted-foreground">Gere e gerencie licenças da extensão</p>
+          </div>
+        </section>
+
+        {/* Credit Packages - Redesenhado */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-light text-foreground">Pacotes de Créditos</h2>
+              <p className="text-sm text-muted-foreground mt-1">Escolha o melhor pacote para você</p>
+            </div>
+            <Button variant="ghost" onClick={() => navigate('/pacotes')} className="gap-2">
+              Ver Todos
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {products.slice(0, 4).map((p, i) => (
+              <div
+                key={p.id}
+                onClick={() => handleSelectProduct(p)}
+                className="group relative rounded-2xl border border-border bg-card p-6 cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all"
+              >
+                {i === 1 && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+                      Popular
+                    </span>
+                  </div>
+                )}
+                <div className="text-center space-y-4">
+                  <div className="h-12 w-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{p.credits_amount}</p>
+                    <p className="text-xs text-muted-foreground">créditos</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-light text-foreground">R$ {p.price.toFixed(2)}</p>
+                  </div>
+                  <Button 
+                    className="w-full rounded-full" 
+                    variant={balance >= p.price ? "default" : "outline"}
+                    disabled={balance < p.price}
+                  >
+                    Comprar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Recent Orders - Minimalista */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-light text-foreground">Pedidos Recentes</h2>
+              <p className="text-sm text-muted-foreground mt-1">Acompanhe seus pedidos</p>
+            </div>
+            <Button onClick={handleRefresh} variant="ghost" size="sm" className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
+          {orders.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-card/50">
+              <Receipt className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <p className="text-muted-foreground">Nenhum pedido ainda</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {orders.slice(0, 5).map(order => (
+                <div
+                  key={order.id}
+                  onClick={() => { setSelectedOrder(order); setOrderSheetOpen(true); }}
+                  className="flex items-center justify-between p-6 rounded-2xl border border-border bg-card hover:border-primary/40 cursor-pointer transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                      order.status === 'completed' ? 'bg-accent/10' :
+                      order.status === 'pending' ? 'bg-warning/10' : 'bg-destructive/10'
+                    }`}>
+                      <Receipt className={`h-5 w-5 ${
+                        order.status === 'completed' ? 'text-accent' :
+                        order.status === 'pending' ? 'text-warning' : 'text-destructive'
+                      }`} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{order.product_name}</p>
+                      <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-foreground">R$ {Number(order.price_at_purchase).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{order.status === 'completed' ? 'Entregue' : order.status === 'pending' ? 'Pendente' : 'Cancelado'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* Bottom Navigation - Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
+        <div className="flex items-center justify-around py-2">
+          {[
+            { key: 'home' as Tab, icon: Home, label: 'Home' },
+            { key: 'buy' as Tab, icon: ShoppingCart, label: 'Comprar' },
+            { key: 'orders' as Tab, icon: Receipt, label: 'Pedidos' },
+            { key: 'academy' as Tab, icon: BookOpen, label: 'Academy' },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => {
+                if (item.key === 'academy') navigate('/academy');
+                else setActiveTab(item.key);
+              }}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${activeTab === item.key ? 'text-primary' : 'text-muted-foreground'
+                }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* Modals */}
+      <DepositModal open={depositModal} onOpenChange={setDepositModal} />
+      <PurchaseModal open={purchaseModal} onOpenChange={setPurchaseModal} product={selectedProduct} />
+      <OrderDetailSheet order={selectedOrder} open={orderSheetOpen} onOpenChange={setOrderSheetOpen} />
+      <SettingsModal open={settingsModal} onOpenChange={setSettingsModal} userEmail={user?.email} userId={user?.id} />
+    </div>
+  );
+};
+
+export default ResellerDashboard;
