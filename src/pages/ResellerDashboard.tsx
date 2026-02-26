@@ -159,6 +159,73 @@ const ResellerDashboard = () => {
           </div>
         </section>
 
+        {/* Top Buyers Ranking */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-light text-foreground">Top Compradores</h2>
+            <p className="text-sm text-muted-foreground mt-1">Os maiores investidores da plataforma</p>
+          </div>
+          <div className="rounded-3xl border border-border bg-card overflow-hidden">
+            <div className="divide-y divide-border">
+              {[
+                { position: 1, name: 'Leonardo', credits: '7.490', badge: 'bg-amber-500' },
+                { position: 2, name: 'Luis Fernando', credits: '5.500', badge: 'bg-slate-400' },
+                { position: 3, name: 'Jorge', credits: '5.000', badge: 'bg-orange-600' }
+              ].map((buyer) => (
+                <div key={buyer.position} className="flex items-center justify-between p-6 hover:bg-accent/5 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-full ${buyer.badge} flex items-center justify-center text-white font-bold text-sm`}>
+                      #{buyer.position}
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-foreground font-medium">
+                      {buyer.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{buyer.name}</p>
+                      <p className="text-sm text-muted-foreground">Membro ativo</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-light text-foreground">{buyer.credits}</p>
+                    <p className="text-xs text-muted-foreground">créditos</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Networking Group CTA */}
+        <section className="rounded-3xl border border-border bg-gradient-to-br from-card to-accent/5 p-8 text-center space-y-6">
+          <div className="h-16 w-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+            <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          
+          <div>
+            <h3 className="text-2xl font-medium text-foreground mb-2">
+              Construindo o futuro com I.A.
+            </h3>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Junte-se ao nosso grupo exclusivo de networking e conecte-se com empreendedores que estão transformando negócios com inteligência artificial.
+            </p>
+          </div>
+
+          <Button
+            size="lg"
+            onClick={() => window.open('https://chat.whatsapp.com/seu-link-aqui', '_blank')}
+            className="rounded-full"
+          >
+            Entrar no Grupo de Networking
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+
+          <p className="text-sm text-muted-foreground">
+            Vagas limitadas — comunidade criada para revendedores
+          </p>
+        </section>
+
         {/* Quick Actions - Minimalista */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
