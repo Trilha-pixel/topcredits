@@ -77,7 +77,7 @@ const Login = () => {
                 Início
               </button>
               <button
-                onClick={() => scrollToSection('pacotes')}
+                onClick={() => navigate('/dashboard')}
                 className="text-sm text-slate-400 hover:text-white transition-colors"
               >
                 Pacotes
@@ -134,7 +134,7 @@ const Login = () => {
             <div className="pt-8">
               <Button
                 size="lg"
-                onClick={() => scrollToSection('pacotes')}
+                onClick={() => navigate('/dashboard')}
                 className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
               >
                 Ver Pacotes de Créditos
@@ -328,7 +328,7 @@ const Login = () => {
               <ul className="space-y-3">
                 <li>
                   <button 
-                    onClick={() => scrollToSection('pacotes')}
+                    onClick={() => navigate('/dashboard')}
                     className="text-sm text-slate-400 hover:text-white transition-colors"
                   >
                     Comprar Créditos

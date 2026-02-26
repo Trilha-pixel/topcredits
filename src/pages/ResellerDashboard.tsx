@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useResellerData } from '@/hooks/useResellerData';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
-import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles, Headphones, ChevronDown, Settings, GraduationCap, LogOut } from 'lucide-react';
+import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles, Headphones, ChevronDown, Settings, GraduationCap, LogOut, User } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import BalanceCard from '@/components/reseller/BalanceCard';
@@ -15,6 +15,7 @@ import DepositModal from '@/components/reseller/DepositModal';
 import PurchaseModal from '@/components/reseller/PurchaseModal';
 import OrderDetailSheet from '@/components/reseller/OrderDetailSheet';
 import SettingsModal from '@/components/reseller/SettingsModal';
+import AuthModal from '@/components/auth/AuthModal';
 import { Product, Order } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -38,6 +39,7 @@ const ResellerDashboard = () => {
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
   const [settingsModal, setSettingsModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [authModal, setAuthModal] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -88,8 +90,22 @@ const ResellerDashboard = () => {
   const initials = user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
 
   const handleSelectProduct = (product: Product) => {
+    // Verifica se o usuário está logado antes de permitir a compra
+    if (!user) {
+      setSelectedProduct(product);
+      setAuthModal(true);
+      return;
+    }
+    
     setSelectedProduct(product);
     setPurchaseModal(true);
+  };
+
+  const handleAuthSuccess = () => {
+    // Após login bem-sucedido, abre o modal de compra se houver produto selecionado
+    if (selectedProduct) {
+      setPurchaseModal(true);
+    }
   };
 
   const handleLogout = () => {
@@ -174,39 +190,51 @@ const ResellerDashboard = () => {
               
               <div className="h-5 w-px bg-white/10" />
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
-                    <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
-                      {initials}
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
+                      <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
+                        {initials}
+                      </div>
+                      <span className="text-xs font-medium text-white hidden sm:block max-w-[120px] truncate">
+                        {user?.full_name}
+                      </span>
+                      <ChevronDown className="h-3 w-3 text-gray-400" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium text-foreground">{user?.full_name}</p>
+                      <p className="text-xs text-muted-foreground">Cliente</p>
                     </div>
-                    <span className="text-xs font-medium text-white hidden sm:block max-w-[120px] truncate">
-                      {user?.full_name}
-                    </span>
-                    <ChevronDown className="h-3 w-3 text-gray-400" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium text-foreground">{user?.full_name}</p>
-                    <p className="text-xs text-muted-foreground">Revendedor</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setSettingsModal(true)} className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    Configurações
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/academy')} className="gap-2">
-                    <GraduationCap className="h-4 w-4" />
-                    Academy
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive gap-2">
-                    <LogOut className="h-4 w-4" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSettingsModal(true)} className="gap-2">
+                      <Settings className="h-4 w-4" />
+                      Configurações
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/academy')} className="gap-2">
+                      <GraduationCap className="h-4 w-4" />
+                      Academy
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive gap-2">
+                      <LogOut className="h-4 w-4" />
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  onClick={() => setAuthModal(true)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-sm text-gray-400 hover:text-white hover:bg-white/5"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Entrar
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -222,33 +250,47 @@ const ResellerDashboard = () => {
         </div>
 
         {/* Balance Hero - Redesenhado */}
-        <section className="rounded-md border border-border bg-[#0A0A0A] p-10">
-          <div className="flex items-center justify-between mb-10">
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Saldo Disponível</p>
-              <h2 className="text-6xl font-light text-foreground tracking-tight" style={{ letterSpacing: '-0.03em' }}>
-                R$ {balance.toFixed(2)}
-              </h2>
+        {user ? (
+          <section className="rounded-md border border-border bg-[#0A0A0A] p-10">
+            <div className="flex items-center justify-between mb-10">
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Saldo Disponível</p>
+                <h2 className="text-6xl font-light text-foreground tracking-tight" style={{ letterSpacing: '-0.03em' }}>
+                  R$ {balance.toFixed(2)}
+                </h2>
+              </div>
+              <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-md px-8 h-12 font-bold" style={{ letterSpacing: '-0.01em' }}>
+                Depositar
+              </Button>
             </div>
-            <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-md px-8 h-12 font-bold" style={{ letterSpacing: '-0.01em' }}>
-              Depositar
-            </Button>
-          </div>
-          <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border/50">
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Gasto Total</p>
-              <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
+            <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border/50">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Gasto Total</p>
+                <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Pedidos</p>
+                <p className="text-2xl font-light text-foreground">{orders.length}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Último Depósito</p>
+                <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Pedidos</p>
-              <p className="text-2xl font-light text-foreground">{orders.length}</p>
+          </section>
+        ) : (
+          <section className="rounded-md border border-border bg-[#0A0A0A] p-10">
+            <div className="text-center space-y-6">
+              <div className="space-y-3">
+                <h2 className="text-3xl font-light text-foreground">Bem-vindo ao Top Créditos</h2>
+                <p className="text-muted-foreground">Faça login para acessar seu saldo e histórico de pedidos</p>
+              </div>
+              <Button onClick={() => setAuthModal(true)} size="lg" className="rounded-md px-8 h-12 font-bold">
+                Entrar ou Criar Conta
+              </Button>
             </div>
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Último Depósito</p>
-              <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Credit Packages - Redesenhado */}
         <section className="space-y-6">
@@ -560,6 +602,7 @@ const ResellerDashboard = () => {
       <PurchaseModal open={purchaseModal} onOpenChange={setPurchaseModal} product={selectedProduct} />
       <OrderDetailSheet order={selectedOrder} open={orderSheetOpen} onOpenChange={setOrderSheetOpen} />
       <SettingsModal open={settingsModal} onOpenChange={setSettingsModal} userEmail={user?.email} userId={user?.id} />
+      <AuthModal open={authModal} onOpenChange={setAuthModal} onSuccess={handleAuthSuccess} />
     </div>
   );
 };
