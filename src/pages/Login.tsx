@@ -118,13 +118,17 @@ const Login = () => {
       <section id="hero" className="relative px-6 pt-32 pb-48">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
+            <div className="inline-block px-4 py-2 rounded-full bg-slate-900/50 border border-slate-800 mb-4">
+              <p className="text-sm text-slate-400">Créditos Lovable Oficiais</p>
+            </div>
+            
             <h1 className="text-7xl md:text-8xl font-light tracking-tight text-white">
               Top Créditos
             </h1>
             
             <p className="text-xl md:text-2xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
-              Créditos Lovable com entrega instantânea.<br />
-              Segurança empresarial. Suporte dedicado.
+              Compre créditos Lovable com entrega instantânea.<br />
+              A forma mais rápida e segura de adquirir seus créditos.
             </p>
 
             <div className="pt-8">
@@ -133,12 +137,12 @@ const Login = () => {
                 onClick={() => scrollToSection('pacotes')}
                 className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
               >
-                Começar Agora
+                Ver Pacotes de Créditos
               </Button>
             </div>
 
             <p className="text-sm text-slate-600 pt-4">
-              Mais de 500 transações processadas nas últimas 24 horas
+              Mais de 500 créditos Lovable vendidos nas últimas 24 horas
             </p>
           </div>
         </div>
@@ -149,10 +153,10 @@ const Login = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center space-y-6">
             <h2 className="text-4xl md:text-5xl font-light text-white">
-              Plataforma completa para gestão de créditos
+              Créditos Lovable direto na sua conta
             </h2>
             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-              Acesse o dashboard para gerenciar seus créditos Lovable, visualizar histórico de transações e acompanhar seu saldo em tempo real.
+              Escolha seu pacote, efetue o pagamento e receba seus créditos Lovable automaticamente em segundos. Simples, rápido e seguro.
             </p>
           </div>
         </div>
@@ -161,6 +165,15 @@ const Login = () => {
       {/* Features */}
       <section id="pacotes" className="relative px-6 py-32 border-y border-slate-900">
         <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-light text-white mb-4">
+              Por que comprar créditos Lovable aqui?
+            </h2>
+            <p className="text-lg text-slate-400">
+              A melhor experiência de compra de créditos Lovable
+            </p>
+          </div>
+          
           <div className="grid md:grid-cols-4 gap-12">
             <div className="text-center space-y-4">
               <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
@@ -168,7 +181,7 @@ const Login = () => {
               </div>
               <h3 className="text-lg font-medium text-white">Entrega Instantânea</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Processamento automático em segundos
+                Créditos Lovable na sua conta em segundos após o pagamento
               </p>
             </div>
 
@@ -176,9 +189,9 @@ const Login = () => {
               <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-slate-400" />
               </div>
-              <h3 className="text-lg font-medium text-white">Segurança Avançada</h3>
+              <h3 className="text-lg font-medium text-white">100% Seguro</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Criptografia de nível empresarial
+                Transações protegidas com criptografia de nível bancário
               </p>
             </div>
 
@@ -186,9 +199,9 @@ const Login = () => {
               <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
                 <Headphones className="w-5 h-5 text-slate-400" />
               </div>
-              <h3 className="text-lg font-medium text-white">Suporte Dedicado</h3>
+              <h3 className="text-lg font-medium text-white">Suporte 24/7</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Atendimento especializado 24/7
+                Atendimento especializado para suas compras de créditos
               </p>
             </div>
 
@@ -198,7 +211,7 @@ const Login = () => {
               </div>
               <h3 className="text-lg font-medium text-white">Garantia Total</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Reembolso em caso de insatisfação
+                Seus créditos Lovable garantidos ou seu dinheiro de volta
               </p>
             </div>
           </div>
@@ -210,8 +223,11 @@ const Login = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-light text-white mb-4">
-              Depoimentos
+              Clientes satisfeitos
             </h2>
+            <p className="text-lg text-slate-400">
+              Veja o que nossos clientes dizem sobre comprar créditos Lovable conosco
+            </p>
           </div>
 
           <Card className="p-12 bg-slate-950/50 backdrop-blur-sm border-slate-900">
@@ -247,17 +263,17 @@ const Login = () => {
       <section className="relative px-6 py-32 border-t border-slate-900">
         <div className="container mx-auto max-w-3xl text-center">
           <h2 className="text-4xl md:text-5xl font-light text-white mb-6">
-            Pronto para começar?
+            Pronto para comprar seus créditos Lovable?
           </h2>
           <p className="text-lg text-slate-400 mb-12">
-            Acesse a plataforma e gerencie seus créditos Lovable de forma simples e segura.
+            Escolha seu pacote e receba seus créditos instantaneamente. Processo simples e 100% seguro.
           </p>
           <Button
             size="lg"
             onClick={() => navigate('/dashboard')}
             className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
           >
-            Acessar dashboard
+            Comprar Créditos Agora
           </Button>
         </div>
       </section>

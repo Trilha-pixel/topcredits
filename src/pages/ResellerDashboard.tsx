@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResellerData } from '@/hooks/useResellerData';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
-import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles } from 'lucide-react';
-import DashboardHeader from '@/components/reseller/DashboardHeader';
+import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles, Headphones, ChevronDown, Settings, GraduationCap, LogOut } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import BalanceCard from '@/components/reseller/BalanceCard';
 import ProductCard from '@/components/reseller/ProductCard';
@@ -18,6 +18,7 @@ import SettingsModal from '@/components/reseller/SettingsModal';
 import { Product, Order } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import logo from '@/assets/logo-neon.png';
 
 type Tab = 'home' | 'buy' | 'orders' | 'academy';
 type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
@@ -113,22 +114,18 @@ const ResellerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 sm:pb-6">
-      {/* Header */}
-      <DashboardHeader
-        userName={user?.full_name || ''}
-        initials={initials}
-        breadcrumb="Dashboard"
-        onLogout={handleLogout}
-        onAcademyClick={() => navigate('/academy')}
-        onSettings={() => setSettingsModal(true)}
-      />
-
       {/* Floating Navbar */}
-      <nav className="sticky top-14 z-40 border-b border-white/5 bg-black/50 backdrop-blur-lg">
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-lg">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="flex items-center justify-between h-12">
+          <div className="flex items-center justify-between h-14">
             {/* Logo - Left */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
+              <img
+                src={logo}
+                alt="Top Credits"
+                className="h-10 w-10 object-contain"
+                style={{ filter: 'drop-shadow(0 0 8px hsl(263 70% 66% / 0.6)) drop-shadow(0 0 20px hsl(263 70% 66% / 0.25))' }}
+              />
               <span className="text-sm font-medium text-white">Top Créditos</span>
             </div>
 
@@ -166,14 +163,50 @@ const ResellerDashboard = () => {
               </button>
             </div>
 
-            {/* Profile Icon - Right */}
-            <div className="flex items-center">
+            {/* Profile Menu - Right */}
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => setSettingsModal(true)}
-                className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+                onClick={() => navigate('/ajuda')}
+                className="text-gray-400 hover:text-white transition-colors"
               >
-                {initials}
+                <Headphones className="h-4 w-4" />
               </button>
+              
+              <div className="h-5 w-px bg-white/10" />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
+                    <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
+                      {initials}
+                    </div>
+                    <span className="text-xs font-medium text-white hidden sm:block max-w-[120px] truncate">
+                      {user?.full_name}
+                    </span>
+                    <ChevronDown className="h-3 w-3 text-gray-400" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium text-foreground">{user?.full_name}</p>
+                    <p className="text-xs text-muted-foreground">Revendedor</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSettingsModal(true)} className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Configurações
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/academy')} className="gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Academy
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -183,9 +216,9 @@ const ResellerDashboard = () => {
         {/* Greeting - Minimalista */}
         <div className="space-y-2">
           <h1 className="text-3xl font-light text-foreground">
-            Olá, {user?.full_name ? user.full_name.split(' ')[0] : 'Revendedor'}
+            Olá, {user?.full_name ? user.full_name.split(' ')[0] : 'Cliente'}
           </h1>
-          <p className="text-muted-foreground">Gerencie seus créditos Lovable</p>
+          <p className="text-muted-foreground">Compre créditos Lovable de forma rápida e segura</p>
         </div>
 
         {/* Balance Hero - Redesenhado */}
@@ -214,6 +247,56 @@ const ResellerDashboard = () => {
               <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Último Depósito</p>
               <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
             </div>
+          </div>
+        </section>
+
+        {/* Credit Packages - Redesenhado */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-light text-foreground">Pacotes de Créditos Lovable</h2>
+              <p className="text-sm text-muted-foreground mt-1">Escolha quantos créditos Lovable você precisa</p>
+            </div>
+            <Button variant="ghost" onClick={() => navigate('/pacotes')} className="gap-2">
+              Ver Todos
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {products.slice(0, 4).map((p, i) => (
+              <div
+                key={p.id}
+                onClick={() => handleSelectProduct(p)}
+                className="group relative rounded-2xl border border-border bg-card p-6 cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all"
+              >
+                {i === 1 && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+                      Mais Vendido
+                    </span>
+                  </div>
+                )}
+                <div className="text-center space-y-4">
+                  <div className="h-12 w-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{p.credits_amount}</p>
+                    <p className="text-xs text-muted-foreground">créditos Lovable</p>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-light text-foreground">R$ {p.price.toFixed(2)}</p>
+                  </div>
+                  <Button 
+                    className="w-full rounded-full" 
+                    variant={balance >= p.price ? "default" : "outline"}
+                    disabled={balance < p.price}
+                  >
+                    Comprar Agora
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -391,56 +474,6 @@ const ResellerDashboard = () => {
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Central de Ajuda</h3>
             <p className="text-sm text-muted-foreground font-medium">Tire suas dúvidas e fale com o suporte</p>
-          </div>
-        </section>
-
-        {/* Credit Packages - Redesenhado */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-light text-foreground">Pacotes de Créditos</h2>
-              <p className="text-sm text-muted-foreground mt-1">Escolha o melhor pacote para você</p>
-            </div>
-            <Button variant="ghost" onClick={() => navigate('/pacotes')} className="gap-2">
-              Ver Todos
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {products.slice(0, 4).map((p, i) => (
-              <div
-                key={p.id}
-                onClick={() => handleSelectProduct(p)}
-                className="group relative rounded-2xl border border-border bg-card p-6 cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all"
-              >
-                {i === 1 && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
-                      Popular
-                    </span>
-                  </div>
-                )}
-                <div className="text-center space-y-4">
-                  <div className="h-12 w-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{p.credits_amount}</p>
-                    <p className="text-xs text-muted-foreground">créditos</p>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-light text-foreground">R$ {p.price.toFixed(2)}</p>
-                  </div>
-                  <Button 
-                    className="w-full rounded-full" 
-                    variant={balance >= p.price ? "default" : "outline"}
-                    disabled={balance < p.price}
-                  >
-                    Comprar
-                  </Button>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
 
