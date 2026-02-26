@@ -6,65 +6,45 @@ import { Order, Profile, Wallet, Transaction, Product } from '@/types';
 export const useAdminData = () => {
     const queryClient = useQueryClient();
 
-    // Fetch all orders with user and product details
+    // Fetch all orders with user and product details using RPC
     const { data: orders = [], isLoading: loadingOrders } = useQuery({
         queryKey: ['admin_orders'],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from('orders')
-                .select(`
-                    *,
-                    profiles:user_id (full_name, email),
-                    products:product_id (name, credits_amount)
-                `)
-                .order('created_at', { ascending: false });
+            const { data, error } = await supabase.rpc('get_all_orders_admin', {
+                p_status: null,
+                p_search: null,
+                p_limit: 1000,
+                p_offset: 0
+            });
 
             if (error) throw error;
-
-            return data.map((o: any) => ({
-                ...o,
-                user_name: o.profiles?.full_name || 'Usuário Desconhecido',
-                lovable_email: o.lovable_email || o.profiles?.email || 'Email não informado',
-                product_name: o.products?.credits_amount ? `${o.products.credits_amount} créditos` : (o.products?.name || 'Produto Removido'),
-            })) as Order[];
+            return data as Order[];
         },
     });
 
-    // Fetch dashboard stats (RPC)
+    // Fetch dashboard stats using RPC
     const { data: stats, isLoading: loadingStats } = useQuery({
         queryKey: ['admin_stats'],
         queryFn: async () => {
-            const { data, error } = await supabase.rpc('get_admin_dashboard_stats');
+            const { data, error } = await supabase.rpc('get_admin_stats');
             if (error) throw error;
             return data;
         },
     });
 
-    // Fetch all resellers with their wallet balance
+    // Fetch all customers with their wallet balance using RPC
     const { data: resellers = [], isLoading: loadingResellers } = useQuery({
         queryKey: ['admin_resellers'],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*, wallets(balance)')
-                .eq('role', 'reseller')
-                .order('full_name');
-
-            if (error) throw error;
-            return data.map((r: any) => {
-                const walletData = r.wallets;
-                const balance = Array.isArray(walletData)
-                    ? walletData[0]?.balance
-                    : walletData?.balance;
-                return {
-                    ...r,
-                    balance: balance ?? 0,
-                };
+            const { data, error } = await supabase.rpc('get_all_customers_admin', {
+                p_search: null
             });
+            if (error) throw error;
+            return data;
         },
     });
 
-    // Fetch all wallets (Backup/Direct access if needed, but resistors query covers it)
+    // Fetch all wallets
     const { data: wallets = [], isLoading: loadingWallets } = useQuery({
         queryKey: ['admin_wallets'],
         queryFn: async () => {
@@ -74,7 +54,7 @@ export const useAdminData = () => {
         },
     });
 
-    // Fetch all transactions (for revenue and stats)
+    // Fetch all transactions
     const { data: transactions = [], isLoading: loadingTransactions } = useQuery({
         queryKey: ['admin_transactions'],
         queryFn: async () => {
@@ -97,37 +77,33 @@ export const useAdminData = () => {
                 .select('*')
                 .order('id');
             if (error) throw error;
-            return data as Product[]; // Product type already matches DB
+            return data as Product[];
         },
     });
 
-    const isLoading = loadingOrders || loadingResellers || loadingWallets || loadingTransactions || loadingProducts;
+    const isLoading = loadingOrders || loadingResellers || loadingWallets || loadingTransactions || loadingProducts || loadingStats;
 
     const updateOrderStatus = async (
         orderId: string,
         status: 'completed' | 'cancelled',
         deliveryLink?: string,
-        controlId?: string
+        deliveryCode?: string
     ) => {
-        if (status === 'completed') {
-            const { error } = await supabase.rpc('admin_deliver_order', {
-                p_order_id: orderId,
-                p_delivery_link: deliveryLink || null,
-                p_control_id: controlId || null,
-            });
-            if (error) throw error;
-        } else if (status === 'cancelled') {
-            const { error } = await supabase.rpc('admin_refund_order', {
-                p_order_id: orderId,
-            });
-            if (error) throw error;
-        }
+        const { error } = await supabase.rpc('admin_update_order_status', {
+            p_order_id: orderId,
+            p_new_status: status,
+            p_delivery_link: deliveryLink || null,
+            p_delivery_code: deliveryCode || null
+        });
+        
+        if (error) throw error;
 
         // Refresh data
         await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['admin_orders'] }),
             queryClient.invalidateQueries({ queryKey: ['admin_resellers'] }),
-            queryClient.invalidateQueries({ queryKey: ['admin_transactions'] }) // Update revenue stats
+            queryClient.invalidateQueries({ queryKey: ['admin_transactions'] }),
+            queryClient.invalidateQueries({ queryKey: ['admin_stats'] })
         ]);
     };
 
@@ -148,6 +124,27 @@ export const useAdminData = () => {
         await queryClient.invalidateQueries({ queryKey: ['admin_products'] });
     };
 
+    const deleteReseller = async (userId: string) => {
+        const { error } = await supabase.rpc('admin_delete_customer', { 
+            p_user_id: userId 
+        });
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ['admin_resellers'] });
+        await queryClient.invalidateQueries({ queryKey: ['admin_stats'] });
+    };
+
+    const updateResellerBalance = async (userId: string, newBalance: number, reason?: string) => {
+        const { error } = await supabase.rpc('admin_update_customer_balance', {
+            p_user_id: userId,
+            p_new_balance: newBalance,
+            p_reason: reason || 'Ajuste manual pelo admin'
+        });
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ['admin_resellers'] });
+        await queryClient.invalidateQueries({ queryKey: ['admin_wallets'] });
+        await queryClient.invalidateQueries({ queryKey: ['admin_transactions'] });
+    };
+
     return {
         orders,
         resellers,
@@ -159,20 +156,7 @@ export const useAdminData = () => {
         updateOrderStatus,
         updateProduct,
         createProduct,
-        deleteReseller: async (userId: string) => {
-            const { error } = await supabase.rpc('admin_delete_user', { target_user_id: userId });
-            if (error) throw error;
-            await queryClient.invalidateQueries({ queryKey: ['admin_resellers'] });
-            await queryClient.invalidateQueries({ queryKey: ['admin_stats'] });
-        },
-        updateResellerBalance: async (userId: string, newBalance: number) => {
-            const { error } = await supabase.rpc('admin_update_balance', {
-                target_user_id: userId,
-                new_balance: newBalance
-            });
-            if (error) throw error;
-            await queryClient.invalidateQueries({ queryKey: ['admin_resellers'] });
-            await queryClient.invalidateQueries({ queryKey: ['admin_wallets'] });
-        }
+        deleteReseller,
+        updateResellerBalance
     };
 };
