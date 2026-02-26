@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import DashboardHeader from '@/components/reseller/DashboardHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Key, Plus, Copy, Check, Clock, CheckCircle2, Gift, Sparkles, Calendar, Lock, Unlock, Search, RefreshCw, Coins, DollarSign, ArrowLeft, Download, ExternalLink } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Key, Plus, Copy, Check, Clock, CheckCircle2, Gift, Sparkles, Calendar, Lock, Unlock, Search, RefreshCw, Coins, DollarSign, ArrowLeft, Download, ExternalLink, Headphones, ChevronDown, Settings, GraduationCap, LogOut, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { licensesAPI, License, Plan } from '@/lib/licenses-api';
 import { supabase } from '@/lib/supabase';
 import { getLicenseErrorMessage, getTokenErrorMessage } from '@/lib/error-messages';
+import logo from '@/assets/logo-neon.png';
 
 const Licencas = () => {
   const { logout, user } = useAuth();
@@ -262,15 +263,187 @@ const Licencas = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader
-        userName={user?.full_name || resellerName || 'Admin'}
-        initials={initials}
-        breadcrumb="Licenças Lovable"
-        onLogout={handleLogout}
-        onAcademyClick={() => navigate('/academy')}
-      />
+      {/* Floating Navbar */}
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-lg">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex items-center justify-between h-14">
+            {/* Logo - Left */}
+            <div className="flex items-center gap-3">
+              <img
+                src={logo}
+                alt="Top Credits"
+                className="h-10 w-10 object-contain"
+                style={{ filter: 'drop-shadow(0 0 8px hsl(263 70% 66% / 0.6)) drop-shadow(0 0 20px hsl(263 70% 66% / 0.25))' }}
+              />
+              <span className="text-sm font-medium text-white">Top Créditos</span>
+            </div>
+
+            {/* Navigation Links - Center */}
+            <div className="hidden md:flex items-center gap-8">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Início
+              </button>
+              <button
+                onClick={() => navigate('/pedidos')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Meus Pedidos
+              </button>
+              <button
+                onClick={() => navigate('/licencas')}
+                className="text-sm font-medium text-white transition-colors"
+              >
+                Licenças
+              </button>
+              <button
+                onClick={() => navigate('/academy')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Academy
+              </button>
+              <button
+                onClick={() => navigate('/ajuda')}
+                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Suporte
+              </button>
+            </div>
+
+            {/* Profile Menu - Right */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/ajuda')}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <Headphones className="h-4 w-4" />
+              </button>
+              
+              <div className="h-5 w-px bg-white/10" />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
+                    <div className="h-7 w-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
+                      {initials}
+                    </div>
+                    <span className="text-xs font-medium text-white hidden sm:block max-w-[120px] truncate">
+                      {user?.full_name || resellerName}
+                    </span>
+                    <ChevronDown className="h-3 w-3 text-gray-400" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium text-foreground">{user?.full_name || resellerName}</p>
+                    <p className="text-xs text-muted-foreground">Cliente</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Configurações
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/academy')} className="gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Academy
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </nav>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
+        {/* Explicação da Extensão */}
+        <div className="relative overflow-hidden rounded-md border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-8">
+          <div className="absolute top-0 right-0 h-96 w-96 bg-primary/10 rounded-full blur-3xl -z-0" />
+          <div className="relative z-10 space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-md bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Key className="h-8 w-8 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold text-foreground mb-3" style={{ letterSpacing: '-0.02em' }}>
+                  Extensão Lovable - Créditos Infinitos
+                </h2>
+                <p className="text-base text-muted-foreground font-medium leading-relaxed mb-4">
+                  Nossa extensão exclusiva permite que você utilize créditos infinitos na plataforma Lovable. 
+                  A extensão "congela" seus créditos, permitindo que você desenvolva projetos ilimitados sem se preocupar com o consumo.
+                </p>
+                <div className="grid md:grid-cols-3 gap-4 mb-6">
+                  <div className="flex items-start gap-3 p-4 rounded-md bg-card/50 border border-border">
+                    <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-foreground mb-1">Créditos Congelados</p>
+                      <p className="text-xs text-muted-foreground">Seus créditos não são consumidos durante o uso</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-md bg-card/50 border border-border">
+                    <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-foreground mb-1">Uso Ilimitado</p>
+                      <p className="text-xs text-muted-foreground">Desenvolva quantos projetos quiser</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-md bg-card/50 border border-border">
+                    <Lock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-foreground mb-1">100% Seguro</p>
+                      <p className="text-xs text-muted-foreground">Extensão testada e aprovada</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vídeo Explicativo */}
+            <div className="rounded-md overflow-hidden border border-border bg-black">
+              <div style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+                <iframe 
+                  src="https://player.vimeo.com/video/1164109842?badge=0&autopause=0&player_id=0&app_id=58479" 
+                  frameBorder="0" 
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" 
+                  referrerPolicy="strict-origin-when-cross-origin" 
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} 
+                  title="CONGELEI O LOVABLE! Novo Bot de Créditos Infinitos (Não Gasta Nada!)"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Button
+                onClick={handleDownloadExtension}
+                disabled={!downloadUrl || loadingDownload}
+                size="lg"
+                className="bg-primary hover:bg-primary/90 rounded-md px-8 font-bold"
+                style={{ letterSpacing: '-0.01em' }}
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Baixar Extensão Agora
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </Button>
+              <Button
+                onClick={() => setGenerateModal(true)}
+                size="lg"
+                variant="outline"
+                className="rounded-md px-8 font-bold border-primary/30 hover:bg-primary/10"
+                style={{ letterSpacing: '-0.01em' }}
+              >
+                <Key className="h-5 w-5 mr-2" />
+                Gerar Licença
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -357,36 +530,6 @@ const Licencas = () => {
             </div>
             <p className="text-4xl font-bold text-destructive">{blockedLicenses}</p>
             <p className="text-xs text-muted-foreground mt-2">Suspensas temporariamente</p>
-          </div>
-        </div>
-
-        {/* Download Extension Section */}
-        <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-accent/5 p-6 md:p-8">
-          <div className="absolute top-0 right-0 h-64 w-64 bg-primary/10 rounded-full blur-3xl -z-0" />
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4 md:gap-6">
-              <div className="h-16 md:h-20 w-16 md:w-20 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Download className="h-8 md:h-10 w-8 md:w-10 text-primary" />
-              </div>
-              <div className="text-center md:text-left">
-                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1 md:mb-2">
-                  Extensão Lovable
-                </h3>
-                <p className="text-sm md:text-base text-muted-foreground">
-                  Baixe a versão mais recente da extensão para seus clientes
-                </p>
-              </div>
-            </div>
-            <Button 
-              onClick={handleDownloadExtension}
-              disabled={!downloadUrl || loadingDownload}
-              size="lg"
-              className="bg-primary hover:bg-primary/90 rounded-xl px-6 md:px-8 flex-shrink-0 w-full md:w-auto"
-            >
-              <Download className="h-5 w-5 mr-2" />
-              Baixar Extensão
-              <ExternalLink className="h-4 w-4 ml-2" />
-            </Button>
           </div>
         </div>
 
