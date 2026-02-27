@@ -157,21 +157,81 @@ export const licensesAPI = {
     return { plans: filteredPlans };
   },
 
-  // List licenses with filters
+  // List licenses with filters - busca apenas as licenças do usuário logado
   async getLicenses(params?: {
     status?: string;
     search?: string;
     limit?: number;
     offset?: number;
   }): Promise<LicensesResponse> {
-    const queryParams = new URLSearchParams();
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    try {
+      // Buscar do banco local (user_licenses)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
 
-    const query = queryParams.toString();
-    return fetchAPI(`/reseller-api/licenses${query ? `?${query}` : ''}`);
+      let query = supabase
+        .from('user_licenses')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
+
+      // Aplicar filtro de status se fornecido
+      if (params?.status) {
+        query = query.eq('status', params.status);
+      }
+
+      // Aplicar filtro de busca se fornecido
+      if (params?.search) {
+        query = query.or(`client_name.ilike.%${params.search}%,license_key.ilike.%${params.search}%`);
+      }
+
+      // Ordenar por data de criação
+      query = query.order('created_at', { ascending: false });
+
+      // Aplicar paginação
+      const limit = params?.limit || 20;
+      const offset = params?.offset || 0;
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      // Converter para o formato esperado
+      const licenses: License[] = (data || []).map(item => {
+        // Verificar se expirou e atualizar status se necessário
+        const now = new Date();
+        const expiresAt = new Date(item.expires_at);
+        const isExpired = expiresAt < now;
+        
+        // Se expirou mas o status ainda é "Ativa", atualizar
+        if (isExpired && item.status === 'Ativa') {
+          supabase
+            .from('user_licenses')
+            .update({ status: 'Expirada' })
+            .eq('id', item.id)
+            .then(() => console.log(`Status atualizado para Expirada: ${item.license_key}`));
+        }
+
+        return {
+          id: item.id,
+          key: item.license_key,
+          client_name: item.client_name,
+          status: isExpired ? 'Expirada' : (item.status || 'Ativa'),
+          plan: item.plan_name,
+          expires_at: item.expires_at
+        };
+      });
+
+      return {
+        licenses,
+        total: count || 0,
+        limit,
+        offset
+      };
+    } catch (error: any) {
+      console.error('Erro ao buscar licenças locais:', error);
+      throw error;
+    }
   },
 
   // Generate commercial license
@@ -182,7 +242,7 @@ export const licensesAPI = {
       body: JSON.stringify(data),
     });
 
-    // Se gerou com sucesso, debita do saldo local
+    // Se gerou com sucesso, debita do saldo local e salva o rastreamento
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -209,6 +269,26 @@ export const licensesAPI = {
       }
 
       console.log('Pagamento processado:', paymentResult);
+
+      // Salvar rastreamento local da licença
+      const { error: trackingError } = await supabase
+        .from('user_licenses')
+        .insert({
+          user_id: user.id,
+          license_key: response.key,
+          plan_name: response.plan,
+          client_name: data.client_name,
+          client_whatsapp: data.client_whatsapp,
+          token_cost: response.token_cost,
+          expires_at: response.expires_at,
+          status: 'Ativa'
+        });
+
+      if (trackingError) {
+        console.error('Erro ao salvar rastreamento da licença:', trackingError);
+        // Não bloqueia o fluxo, apenas loga
+      }
+
     } catch (error: any) {
       console.error('Erro no processamento do pagamento:', error);
       // Licença já foi gerada, então não vamos bloquear o fluxo
@@ -227,18 +307,52 @@ export const licensesAPI = {
 
   // Block license
   async blockLicense(licenseId: string): Promise<{ success: boolean }> {
-    return fetchAPI('/reseller-api/licenses/block', {
+    // Bloquear na API externa
+    const result = await fetchAPI('/reseller-api/licenses/block', {
       method: 'POST',
       body: JSON.stringify({ license_id: licenseId }),
     });
+
+    // Atualizar status local
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('user_licenses')
+          .update({ status: 'Bloqueada' })
+          .eq('id', licenseId)
+          .eq('user_id', user.id);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status local:', error);
+    }
+
+    return result;
   },
 
   // Unblock license
   async unblockLicense(licenseId: string): Promise<{ success: boolean }> {
-    return fetchAPI('/reseller-api/licenses/unblock', {
+    // Desbloquear na API externa
+    const result = await fetchAPI('/reseller-api/licenses/unblock', {
       method: 'POST',
       body: JSON.stringify({ license_id: licenseId }),
     });
+
+    // Atualizar status local
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('user_licenses')
+          .update({ status: 'Ativa' })
+          .eq('id', licenseId)
+          .eq('user_id', user.id);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status local:', error);
+    }
+
+    return result;
   },
 
   // Validate license
