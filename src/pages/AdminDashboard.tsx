@@ -29,6 +29,7 @@ import AdminLicenses from '@/components/admin/AdminLicenses';
 import { Order, Profile, Product } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 const statusConfig = {
   pending: { label: 'Pendente', icon: Clock, className: 'bg-warning/10 text-warning border-warning/20', pulse: true },
@@ -256,11 +257,7 @@ const AdminDashboard = () => {
   ];
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
