@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/dialog';
 import { Product } from '@/types';
 import { toast } from 'sonner';
-
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import PurchaseSuccessModal from './PurchaseSuccessModal';
 
 interface PurchaseModalProps {
   open: boolean;
@@ -23,12 +23,13 @@ interface PurchaseModalProps {
 
 const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, product }) => {
   const [loading, setLoading] = useState(false);
-  const [customerName, setCustomerName] = useState('');
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [orderData, setOrderData] = useState<{ deliveryLink: string; credits: number; orderId: string } | null>(null);
 
   if (!product) return null;
 
   const handleConfirm = async () => {
-    if (loading) return; // Prevent double clicks
+    if (loading) return;
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,22 +39,11 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
         return;
       }
 
-      // Log para debug
-      console.log('[PurchaseModal] Session exists:', !!session);
-      console.log('[PurchaseModal] Access token exists:', !!session.access_token);
-      console.log('[PurchaseModal] User:', session.user?.email);
-      console.log('[PurchaseModal] Token expires at:', new Date(session.expires_at! * 1000).toISOString());
-      console.log('[PurchaseModal] Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('[PurchaseModal] Function URL:', `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-order`);
-      console.log('[PurchaseModal] Enviando pedido para create-order...');
-      console.log('[PurchaseModal] Product ID:', product.id);
-      console.log('[PurchaseModal] Customer Name:', customerName.trim() || 'N/A');
+      console.log('[PurchaseModal] Enviando pedido...');
 
-      // Using supabase.functions.invoke - it automatically adds the auth header
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
-          productId: product.id,
-          customerName: customerName.trim() || undefined
+          productId: product.id
         },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -73,12 +63,67 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
         throw new Error(data.error);
       }
 
-      toast.success(`Pedido realizado! Aguarde o envio do link.`);
-      setCustomerName(''); // Reset
+      if (!data?.success) {
+        console.error('[PurchaseModal] Response sem success:', data);
+        throw new Error(data?.error || 'Erro desconhecido ao processar compra');
+      }
+
+      // Aguardar o link ser gerado (polling)
+      const orderId = data.order.id;
+      let attempts = 0;
+      const maxAttempts = 30; // 30 segundos
+      
+      toast.loading('Gerando link de entrega...', { id: 'generating-link' });
+      
+      const checkLink = async (): Promise<string> => {
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('delivery_link')
+          .eq('id', orderId)
+          .single();
+
+        if (orderError) throw orderError;
+
+        const link = orderData?.delivery_link;
+        
+        // Verifica se o link foi gerado e não é um erro
+        if (link && link !== 'GERANDO LINK...' && !link.startsWith('ERRO_')) {
+          return link;
+        }
+        
+        if (link?.startsWith('ERRO_')) {
+          throw new Error(`Erro ao gerar link: ${link}`);
+        }
+
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw new Error('Timeout ao gerar link de entrega');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return checkLink();
+      };
+
+      const deliveryLink = await checkLink();
+      
+      toast.dismiss('generating-link');
+
+      // Sucesso! Mostrar modal de sucesso
+      setOrderData({
+        deliveryLink,
+        credits: product.credits_amount,
+        orderId
+      });
+      
       onOpenChange(false);
+      
+      setTimeout(() => {
+        setSuccessModalOpen(true);
+      }, 300);
 
     } catch (error: any) {
       console.error('[PurchaseModal] Erro na compra:', error);
+      toast.dismiss('generating-link');
       toast.error(error.message || 'Erro ao processar compra.');
     } finally {
       setLoading(false);
@@ -86,6 +131,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border sm:max-w-md">
         <DialogHeader>
@@ -103,20 +149,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
             <p className="text-sm text-muted-foreground mb-2">Você vai receber</p>
             <p className="text-3xl font-bold text-primary mb-1">{product.credits_amount} créditos</p>
             <p className="text-sm text-foreground font-medium">Investimento: R$ {product.price.toFixed(2)}</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="customerName">Identificação do Cliente (Opcional)</Label>
-            <Input
-              id="customerName"
-              placeholder="Ex: Nome do Cliente, ID, etc."
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="bg-background"
-            />
-            <p className="text-xs text-muted-foreground">
-              Isso ajuda você a identificar de quem é este pedido no histórico.
-            </p>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -139,6 +171,17 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
         </div>
       </DialogContent>
     </Dialog>
+    
+    {orderData && (
+      <PurchaseSuccessModal
+        open={successModalOpen}
+        onOpenChange={setSuccessModalOpen}
+        deliveryLink={orderData.deliveryLink}
+        credits={orderData.credits}
+        productName={product.name}
+      />
+    )}
+    </>
   );
 };
 
