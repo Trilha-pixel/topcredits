@@ -53,6 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const fetchProfileAndWallet = async (userId: string) => {
+    console.log('👤 Buscando perfil e carteira para:', userId);
+    
     try {
       // Fetch Profile
       const { data: profileData, error: profileError } = await supabase
@@ -62,8 +64,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
+        console.error('❌ Erro ao buscar perfil:', {
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+          code: profileError.code,
+          fullError: profileError
+        });
       } else {
+        console.log('✅ Perfil carregado:', profileData);
         setUser(profileData as Profile);
       }
 
@@ -74,24 +83,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', userId)
         .single();
 
-      if (walletError && walletError.code !== 'PGRST116') { // Ignore 'PGRST116' (no rows) if wallet doesn't exist yet
-        console.error('Error fetching wallet:', walletError);
+      if (walletError && walletError.code !== 'PGRST116') {
+        console.error('❌ Erro ao buscar carteira:', walletError);
+      } else {
+        console.log('✅ Carteira carregada:', walletData);
       }
 
       setBalance(walletData?.balance ?? 0);
 
     } catch (error) {
-      console.error('Unexpected error fetching user data:', error);
+      console.error('❌ Erro inesperado ao buscar dados do usuário:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (email: string, password: string) => {
+    console.log('🔑 AuthContext.login chamado', { email });
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    console.log('🔑 Resultado do signInWithPassword:', { error });
+    
     return { error };
   };
 

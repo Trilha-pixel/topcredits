@@ -31,10 +31,15 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('🔐 Tentando fazer login...', { email });
+
     try {
       const { error } = await login(email, password);
       
+      console.log('🔐 Resposta do login:', { error });
+      
       if (error) {
+        console.error('❌ Erro no login:', error);
         toast.error('Erro ao fazer login', {
           description: error.message === 'Invalid login credentials' 
             ? 'Email ou senha incorretos' 
@@ -43,6 +48,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
         return;
       }
 
+      console.log('✅ Login bem-sucedido!');
       toast.success('Login realizado com sucesso!');
       onOpenChange(false);
       onSuccess?.();
@@ -51,6 +57,7 @@ const AuthModal = ({ open, onOpenChange, onSuccess }: AuthModalProps) => {
       setEmail('');
       setPassword('');
     } catch (error: any) {
+      console.error('❌ Erro inesperado no login:', error);
       toast.error('Erro inesperado', {
         description: error.message
       });
