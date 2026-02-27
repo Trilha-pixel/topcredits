@@ -98,7 +98,12 @@ export const useAdminData = () => {
                     total_customers: 0,
                     total_revenue: 0,
                     total_credits_sold: 0,
-                    total_wallet_balance: 0
+                    total_wallet_balance: 0,
+                    net_profit: 0,
+                    total_costs: 0,
+                    credits_revenue: 0,
+                    api_extension_revenue: 0,
+                    new_customers_this_month: 0
                 };
             } catch (err) {
                 console.error('❌ Exception in stats fetch:', err);

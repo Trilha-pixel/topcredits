@@ -86,3 +86,20 @@ export interface AcademyAttachment {
     file_size?: string;
     created_at?: string;
 }
+
+export interface AdminStats {
+    total_orders: number;
+    pending_orders: number;
+    completed_orders: number;
+    cancelled_orders: number;
+    total_customers: number;
+    total_revenue: number;
+    total_credits_sold: number;
+    total_wallet_balance: number;
+    // Financial KPIs
+    net_profit: number;
+    total_costs: number;
+    credits_revenue: number;
+    api_extension_revenue: number;
+    new_customers_this_month: number;
+}

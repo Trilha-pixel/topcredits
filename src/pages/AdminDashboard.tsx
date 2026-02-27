@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useNavigate } from 'react-router-dom';
+import { AdminStats } from '@/types';
 import { 
   LayoutDashboard, Package, Users, ShoppingCart, 
-  TrendingUp, DollarSign, Clock, LogOut,
-  Search, Filter, MoreVertical, Check, X,
+  LogOut, Search, MoreVertical, Check, X,
   Eye, Edit, Trash2, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -127,54 +127,101 @@ const AdminDashboard = () => {
 const OverviewTab = ({ stats, orders }: any) => {
   const kpis = [
     {
-      label: 'Volume em Carteiras',
-      value: `R$ ${Number(stats?.total_wallet_balance || 0).toFixed(2)}`,
-      icon: DollarSign,
-      color: 'text-accent',
+      label: 'Lucro Líquido',
+      value: `R$ ${Number(stats?.net_profit || 0).toFixed(2)}`,
+      color: 'text-emerald-500',
+      trend: '+12.5%',
     },
     {
-      label: 'Receita Total',
-      value: `R$ ${Number(stats?.total_revenue || 0).toFixed(2)}`,
-      icon: TrendingUp,
-      color: 'text-primary',
+      label: 'Custos de API',
+      value: `R$ ${Number(stats?.total_costs || 0).toFixed(2)}`,
+      color: 'text-muted-foreground',
+      trend: 'Est.',
+    },
+    {
+      label: 'Novos Clientes',
+      value: stats?.new_customers_this_month || 0,
+      color: 'text-foreground',
+      trend: 'Mês',
     },
     {
       label: 'Pedidos Pendentes',
       value: stats?.pending_orders || 0,
-      icon: Clock,
-      color: 'text-warning',
-    },
-    {
-      label: 'Total de Clientes',
-      value: stats?.total_customers || 0,
-      icon: Users,
-      color: 'text-foreground',
+      color: 'text-muted-foreground',
+      trend: 'Aguardando',
     },
   ];
+
+  const creditsRevenue = Number(stats?.credits_revenue || 0);
+  const apiRevenue = Number(stats?.api_extension_revenue || 0);
+  const totalRevenue = creditsRevenue + apiRevenue;
+  const creditsPercentage = totalRevenue > 0 ? (creditsRevenue / totalRevenue) * 100 : 0;
+  const apiPercentage = totalRevenue > 0 ? (apiRevenue / totalRevenue) * 100 : 0;
 
   const pendingOrders = orders.filter((o: any) => o.status === 'pending' || o.status === 'processing').slice(0, 5);
 
   return (
     <div className="space-y-6">
-      {/* KPIs */}
+      {/* KPIs Minimalistas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi, index) => {
-          const Icon = kpi.icon;
-          return (
-            <div key={index} className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
-                <Icon className={`h-4 w-4 ${kpi.color}`} />
-              </div>
-              <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
+        {kpis.map((kpi, index) => (
+          <div key={index} className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">{kpi.label}</p>
+            <div className="flex items-baseline justify-between">
+              <p className={`text-3xl font-light ${kpi.color}`}>{kpi.value}</p>
+              <span className="text-xs text-muted-foreground">{kpi.trend}</span>
             </div>
-          );
-        })}
+          </div>
+        ))}
+      </div>
+
+      {/* Separação de Receita */}
+      <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+        <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-4">Receita por Categoria</h3>
+        <div className="space-y-4">
+          {/* Venda de Créditos */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-foreground">Venda de Créditos</span>
+              <span className="text-sm font-medium text-emerald-500">R$ {creditsRevenue.toFixed(2)}</span>
+            </div>
+            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-500/80 transition-all duration-500"
+                style={{ width: `${creditsPercentage}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{creditsPercentage.toFixed(1)}% do total</p>
+          </div>
+
+          {/* Extensão de API */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-foreground">Extensão de API</span>
+              <span className="text-sm font-medium text-muted-foreground">R$ {apiRevenue.toFixed(2)}</span>
+            </div>
+            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-muted-foreground/60 transition-all duration-500"
+                style={{ width: `${apiPercentage}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{apiPercentage.toFixed(1)}% do total</p>
+          </div>
+
+          {/* Total */}
+          <div className="pt-3 border-t border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Receita Total</span>
+              <span className="text-lg font-light text-foreground">R$ {totalRevenue.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Recent Pending Orders */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Pedidos Pendentes</h2>
+        <h3 className="text-sm text-muted-foreground uppercase tracking-wider mb-4">Pedidos Pendentes</h3>
         <div className="space-y-2">
           {pendingOrders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
@@ -188,8 +235,8 @@ const OverviewTab = ({ stats, orders }: any) => {
                   <p className="text-xs text-muted-foreground">{order.product_name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-foreground">R$ {Number(order.price_at_purchase).toFixed(2)}</p>
-                  <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
+                  <p className="text-sm font-light text-foreground">R$ {Number(order.price_at_purchase).toFixed(2)}</p>
+                  <Badge variant="outline" className="text-xs bg-muted/50 text-muted-foreground border-border">
                     Pendente
                   </Badge>
                 </div>
