@@ -140,8 +140,21 @@ export const licensesAPI = {
   },
 
   // Get plans
+  // Get plans - Filtra apenas os planos que vendemos
   async getPlans(): Promise<{ plans: Plan[] }> {
-    return fetchAPI('/reseller-api/plans');
+    const response = await fetchAPI('/reseller-api/plans');
+    
+    console.log('[Licenses API] Planos disponíveis na API:', response.plans);
+    
+    // Filtra planos de 1 dia (3 tokens) e 7 dias (4 tokens)
+    const allowedTokenCosts = [3, 4]; // tokens
+    const filteredPlans = response.plans.filter((plan: Plan) => 
+      allowedTokenCosts.includes(plan.token_cost)
+    );
+    
+    console.log('[Licenses API] Planos filtrados:', filteredPlans);
+    
+    return { plans: filteredPlans };
   },
 
   // List licenses with filters

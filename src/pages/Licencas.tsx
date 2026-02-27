@@ -13,6 +13,7 @@ import { licensesAPI, License, Plan } from '@/lib/licenses-api';
 import { supabase } from '@/lib/supabase';
 import { getLicenseErrorMessage, getTokenErrorMessage } from '@/lib/error-messages';
 import logo from '@/assets/logo-neon.png';
+import SimplePurchaseModal from '@/components/licenses/SimplePurchaseModal';
 
 const Licencas = () => {
   const { logout, user } = useAuth();
@@ -32,9 +33,6 @@ const Licencas = () => {
   const [trialModal, setTrialModal] = useState(false);
   const [buyTokensModal, setBuyTokensModal] = useState(false);
   const [tokensToBuy, setTokensToBuy] = useState<number>(10);
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [clientName, setClientName] = useState('');
-  const [clientWhatsapp, setClientWhatsapp] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [total, setTotal] = useState(0);
@@ -104,41 +102,8 @@ const Licencas = () => {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const handleGenerateLicense = async () => {
-    if (!selectedPlan || !clientName.trim() || !clientWhatsapp.trim()) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    // Verificar se tem tokens suficientes
-    const plan = plans.find(p => p.id === selectedPlan);
-    if (plan && balance < plan.token_cost) {
-      toast.error(`Saldo insuficiente! Você precisa de ${plan.token_cost} tokens mas tem apenas ${balance}.`);
-      setGenerateModal(false);
-      setBuyTokensModal(true);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await licensesAPI.generateLicense({
-        plan_id: selectedPlan,
-        client_name: clientName,
-        client_whatsapp: clientWhatsapp,
-      });
-
-      toast.success(`Licença gerada com sucesso! Custo: ${result.token_cost} tokens`);
-      setGenerateModal(false);
-      setClientName('');
-      setClientWhatsapp('');
-      setSelectedPlan('');
-      loadData();
-    } catch (error: any) {
-      console.error('Erro ao gerar licença:', error);
-      toast.error(getLicenseErrorMessage(error, 'generate'));
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGenerateSuccess = () => {
+    loadData(); // Recarrega os dados após gerar licença
   };
 
   const handleGenerateTrialLicense = async () => {
@@ -718,46 +683,13 @@ const Licencas = () => {
         </section>
       </main>
 
-      <Dialog open={generateModal} onOpenChange={setGenerateModal}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-primary">
-              <Key className="h-5 w-5" />
-              Gerar Licença Paga
-            </DialogTitle>
-            <DialogDescription>Crie uma licença comercial. Tokens serão debitados automaticamente.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Plano</Label>
-              <select value={selectedPlan} onChange={e => setSelectedPlan(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <option value="">Selecione um plano</option>
-                {plans.map(plan => (
-                  <option key={plan.id} value={plan.id}>{plan.name} - {plan.token_cost} tokens ({plan.duration_days} dias)</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nome do Cliente</Label>
-              <Input placeholder="João Silva" value={clientName} onChange={e => setClientName(e.target.value)} className="bg-secondary border-border" />
-            </div>
-            <div className="space-y-2">
-              <Label>WhatsApp do Cliente</Label>
-              <Input placeholder="5511999999999" value={clientWhatsapp} onChange={e => setClientWhatsapp(e.target.value)} className="bg-secondary border-border" />
-            </div>
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-              <p className="text-xs text-muted-foreground">Saldo atual: <span className="font-bold text-primary">{balance} tokens</span></p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setGenerateModal(false)}>Cancelar</Button>
-            <Button onClick={handleGenerateLicense} disabled={isLoading || !selectedPlan || !clientName || !clientWhatsapp} className="bg-primary hover:bg-primary/90">
-              <Key className="h-4 w-4 mr-2" />
-              Gerar Licença
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Simple Purchase Modal - B2C */}
+      <SimplePurchaseModal
+        open={generateModal}
+        onOpenChange={setGenerateModal}
+        balance={balance}
+        onSuccess={handleGenerateSuccess}
+      />
 
       <Dialog open={trialModal} onOpenChange={setTrialModal}>
         <DialogContent className="bg-card border-border sm:max-w-md">
