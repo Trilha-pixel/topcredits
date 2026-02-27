@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useNavigate } from 'react-router-dom';
 import { AdminStats } from '@/types';
+import { supabase } from '@/lib/supabase';
 import { 
   LayoutDashboard, Package, Users, ShoppingCart, 
   LogOut, Search, MoreVertical, Check, X,
@@ -408,11 +409,37 @@ const CustomersTab = ({ customers, searchQuery, setSearchQuery }: any) => {
 
 // Products Tab Component
 const ProductsTab = ({ products }: any) => {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const { updateProduct, createProduct } = useAdminData();
+
+  const handleEdit = (product: any) => {
+    setSelectedProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (productId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+      
+      if (error) throw error;
+      toast.success('Produto excluído com sucesso');
+    } catch (error: any) {
+      toast.error('Erro ao excluir produto: ' + error.message);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-foreground">Produtos</h2>
-        <Button size="sm">
+        <h2 className="text-sm text-muted-foreground uppercase tracking-wider">Produtos</h2>
+        <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Produto
         </Button>
@@ -430,16 +457,26 @@ const ProductsTab = ({ products }: any) => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{product.name}</p>
                   <Badge variant="outline" className={`text-xs mt-1 ${
-                    product.active ? 'bg-accent/10 text-accent border-accent/20' : 'bg-muted text-muted-foreground'
+                    product.active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-muted text-muted-foreground'
                   }`}>
                     {product.active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0"
+                    onClick={() => handleEdit(product)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0 text-destructive"
+                    onClick={() => handleDelete(product.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -451,12 +488,207 @@ const ProductsTab = ({ products }: any) => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Preço:</span>
-                  <span className="font-bold text-accent">R$ {Number(product.price).toFixed(2)}</span>
+                  <span className="font-light text-emerald-500">R$ {Number(product.price).toFixed(2)}</span>
                 </div>
+                {product.unit_cost_brl > 0 && (
+                  <div className="flex justify-between text-xs pt-2 border-t border-border">
+                    <span className="text-muted-foreground">Custo:</span>
+                    <span className="text-muted-foreground">R$ {(product.unit_cost_brl * product.credits_amount).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))
         )}
+      </div>
+
+      {/* Create Product Modal */}
+      <ProductModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={createProduct}
+        title="Novo Produto"
+      />
+
+      {/* Edit Product Modal */}
+      <ProductModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        onSave={(data) => updateProduct(selectedProduct.id, data)}
+        product={selectedProduct}
+        title="Editar Produto"
+      />
+    </div>
+  );
+};
+
+// Product Modal Component
+interface ProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: any) => Promise<void>;
+  product?: any;
+  title: string;
+}
+
+const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, title }) => {
+  const [formData, setFormData] = useState({
+    name: product?.name || '',
+    credits_amount: product?.credits_amount || '',
+    price: product?.price || '',
+    active: product?.active ?? true,
+    category: product?.category || 'credits',
+    unit_cost_brl: product?.unit_cost_brl || '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        credits_amount: product.credits_amount || '',
+        price: product.price || '',
+        active: product.active ?? true,
+        category: product.category || 'credits',
+        unit_cost_brl: product.unit_cost_brl || '',
+      });
+    }
+  }, [product]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const productData = {
+        name: formData.name,
+        credits_amount: parseInt(formData.credits_amount),
+        price: parseFloat(formData.price),
+        active: formData.active,
+        category: formData.category,
+        unit_cost_brl: formData.unit_cost_brl ? parseFloat(formData.unit_cost_brl) : 0,
+      };
+
+      console.log('Salvando produto:', productData);
+      console.log('Produto ID:', product?.id);
+      
+      await onSave(productData);
+      
+      toast.success(product ? 'Produto atualizado com sucesso' : 'Produto criado com sucesso');
+      onClose();
+    } catch (error: any) {
+      console.error('Erro ao salvar produto:', error);
+      toast.error('Erro ao salvar produto: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">{title}</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm text-muted-foreground">Nome do Produto</label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ex: Pacote Starter"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-muted-foreground">Créditos</label>
+              <Input
+                type="number"
+                value={formData.credits_amount}
+                onChange={(e) => setFormData({ ...formData, credits_amount: e.target.value })}
+                placeholder="10"
+                required
+                min="1"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Preço (R$)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                placeholder="5.00"
+                required
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Custo Unitário (R$)</label>
+            <Input
+              type="number"
+              step="0.0001"
+              value={formData.unit_cost_brl}
+              onChange={(e) => setFormData({ ...formData, unit_cost_brl: e.target.value })}
+              placeholder="0.19"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Custo por crédito (opcional)
+            </p>
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Categoria</label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="credits">Créditos</option>
+              <option value="api_extension">Extensão de API</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="active"
+              checked={formData.active}
+              onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+              className="rounded border-border"
+            />
+            <label htmlFor="active" className="text-sm text-foreground">
+              Produto ativo
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

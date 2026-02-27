@@ -258,10 +258,16 @@ export const useAdminData = () => {
     };
 
     const updateProduct = async (id: number, updates: Partial<Product>) => {
-        const { error } = await supabase
+        console.log('updateProduct chamado:', { id, updates });
+        
+        const { data, error } = await supabase
             .from('products')
             .update(updates)
-            .eq('id', id);
+            .eq('id', id)
+            .select();
+        
+        console.log('updateProduct resultado:', { data, error });
+        
         if (error) throw error;
         await queryClient.invalidateQueries({ queryKey: ['admin_products'] });
     };
