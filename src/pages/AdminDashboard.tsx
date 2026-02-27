@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import DashboardHeader from '@/components/reseller/DashboardHeader';
 import AdminAcademy from '@/components/admin/AdminAcademy';
 import AdminLicenses from '@/components/admin/AdminLicenses';
+import { DiagnosticPanel } from '@/components/admin/DiagnosticPanel';
 import { Order, Profile, Product } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,17 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const { orders, resellers: customers, wallets, transactions, products, stats, isLoading, updateOrderStatus, updateProduct, createProduct, deleteReseller: deleteCustomer, updateResellerBalance: updateCustomerBalance } = useAdminData();
+
+  // Debug: Log data state
+  React.useEffect(() => {
+    console.log('🎯 AdminDashboard Data State:', {
+      ordersCount: orders?.length || 0,
+      customersCount: customers?.length || 0,
+      productsCount: products?.length || 0,
+      hasStats: !!stats,
+      isLoading
+    });
+  }, [orders, customers, products, stats, isLoading]);
 
   const [cancelModal, setCancelModal] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -260,6 +272,20 @@ const AdminDashboard = () => {
     return <LoadingScreen />;
   }
 
+  // Mostrar painel de diagnóstico se não houver dados
+  const hasData = orders.length > 0 || customers.length > 0;
+  if (!hasData && !isLoading) {
+    return (
+      <DiagnosticPanel
+        ordersCount={orders.length}
+        customersCount={customers.length}
+        productsCount={products.length}
+        hasStats={!!stats}
+        isLoading={isLoading}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader
@@ -296,44 +322,31 @@ const AdminDashboard = () => {
         {/* ============ OVERVIEW TAB ============ */}
         {activeTab === 'overview' && (
           <>
-            {/* KPIs */}
+            {/* KPIs - Design Minimalista */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/10 via-card to-accent/5 p-5">
-                <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-accent/10 blur-2xl" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Volume em carteiras</p>
-                    <DollarSign className="h-4 w-4 text-accent" />
-                  </div>
-                  <p className="text-2xl font-bold text-accent">R$ {Number(stats?.total_wallet_balance || 0).toFixed(2)}</p>
+              {/* Volume em Carteiras */}
+              <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Volume em carteiras</p>
+                  <DollarSign className="h-4 w-4 text-accent" />
                 </div>
+                <p className="text-2xl font-bold text-accent">R$ {Number(stats?.total_wallet_balance || 0).toFixed(2)}</p>
               </div>
-              <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-primary/5 p-5">
-                <div className="absolute -top-10 -right-10 h-24 w-24 rounded-full bg-primary/10 blur-2xl" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Receita total</p>
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                  </div>
-                  <p className="text-2xl font-bold text-primary">R$ {Number(stats?.total_revenue || 0).toFixed(2)}</p>
+
+              {/* Receita Total */}
+              <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Receita total</p>
+                  <TrendingUp className="h-4 w-4 text-primary" />
                 </div>
+                <p className="text-2xl font-bold text-primary">R$ {Number(stats?.total_revenue || 0).toFixed(2)}</p>
               </div>
-              <div className="rounded-2xl border border-border bg-card p-5">
+
+              {/* Pendentes */}
+              <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pendentes</p>
                   <Clock className="h-4 w-4 text-warning animate-pulse" />
-                </div>
-                <p className="text-2xl font-bold text-warning">{stats?.pending_orders || 0}</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-card p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Clientes</p>
-                  <Users className="h-4 w-4 text-foreground" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats?.total_customers || 0}</p>
-              </div>
-            </div>
-
             {/* Quick Actions: Recent Pending Orders */}
             <section>
               <div className="flex items-center justify-between mb-4">
@@ -345,7 +358,7 @@ const AdminDashboard = () => {
                   onClick={() => { setActiveTab('orders'); setOrderFilter('pending'); }}
                   className="text-xs text-primary hover:underline"
                 >
-                  Ver todos →
+                  Ver todos
                 </button>
               </div>
               <div className="space-y-2">
@@ -353,7 +366,7 @@ const AdminDashboard = () => {
                   const s = statusConfig[order.status] || statusConfig.pending;
                   const StatusIcon = s.icon;
                   return (
-                    <div key={order.id} className="flex items-center gap-3 rounded-xl border border-border bg-card/50 p-4 hover:bg-card transition-colors">
+                    <div key={order.id} className="flex items-center gap-3 rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4 hover:bg-card transition-colors">
                       <StatusIcon className={`h-5 w-5 shrink-0 ${s.pulse ? 'animate-pulse text-warning' : 'text-primary'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
@@ -408,7 +421,7 @@ const AdminDashboard = () => {
                 {orders.filter(o => o.status === 'pending' || o.status === 'processing').length === 0 && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
                     <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-accent/50" />
-                    Nenhum pedido pendente. Tudo em dia! 🎉
+                    Nenhum pedido pendente. Tudo em dia.
                   </div>
                 )}
               </div>
@@ -460,7 +473,7 @@ const AdminDashboard = () => {
                   const s = statusConfig[order.status] || statusConfig.pending;
                   const StatusIcon = s.icon;
                   return (
-                    <div key={order.id} className="flex items-center gap-3 rounded-xl border border-border bg-card/50 p-4 hover:bg-card transition-colors">
+                    <div key={order.id} className="flex items-center gap-3 rounded-lg border border-border bg-card/50 p-4 hover:bg-card transition-colors">
                       <StatusIcon className={`h-5 w-5 shrink-0 ${s.pulse ? 'animate-pulse text-warning' : order.status === 'completed' ? 'text-accent' : order.status === 'cancelled' ? 'text-destructive' : 'text-primary'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
@@ -558,7 +571,7 @@ const AdminDashboard = () => {
                         <div
                           key={r.id}
                           onClick={() => { setSelectedCustomer(r); setCustomerOrderFilter('pending'); }}
-                          className="relative group rounded-2xl border border-border bg-card p-5 cursor-pointer transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
+                          className="relative group rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4 cursor-pointer transition-all hover:border-primary/40 hover:shadow-md hover:shadow-primary/5"
                         >
                           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <Button
@@ -666,7 +679,7 @@ const AdminDashboard = () => {
                     </button>
 
                     {/* Customer header */}
-                    <div className="rounded-2xl border border-border bg-card p-5">
+                    <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
                       <div className="flex items-start gap-4">
                         <div className="relative">
                           <Avatar className="h-14 w-14 border-2 border-primary/20">
@@ -748,7 +761,7 @@ const AdminDashboard = () => {
                           const s = statusConfig[order.status] || statusConfig.pending;
                           const StatusIcon = s.icon;
                           return (
-                            <div key={order.id} className="flex items-center gap-3 rounded-xl border border-border bg-card/50 p-4 hover:bg-card transition-colors">
+                            <div key={order.id} className="flex items-center gap-3 rounded-lg border border-border bg-card/50 p-4 hover:bg-card transition-colors">
                               <StatusIcon className={`h-5 w-5 shrink-0 ${s.pulse ? 'animate-pulse text-warning' : order.status === 'completed' ? 'text-accent' : order.status === 'cancelled' ? 'text-destructive' : 'text-primary'}`} />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
@@ -818,7 +831,7 @@ const AdminDashboard = () => {
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {products.map(product => (
-                <div key={product.id} className="relative rounded-2xl border border-border bg-card p-5 group hover:border-primary/50 transition-all">
+                <div key={product.id} className="relative rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4 group hover:border-primary/50 transition-all">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-bold text-foreground">{product.name}</h3>
                     <Badge variant="outline" className={product.active ? 'text-accent border-accent/20 bg-accent/10' : 'text-muted-foreground'}>
@@ -963,7 +976,7 @@ const AdminDashboard = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="rounded-xl bg-accent/5 border border-accent/20 p-4">
+            <div className="rounded-lg bg-accent/5 border border-accent/20 p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Produto</span>
                 <span className="font-medium text-foreground">{deliverModal?.product_name}</span>
@@ -1040,7 +1053,7 @@ const AdminDashboard = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div className="rounded-xl bg-destructive/5 border border-destructive/20 p-4">
+            <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Pedido</span>
                 <span className="font-medium text-foreground">{cancelModal?.product_name}</span>
@@ -1149,3 +1162,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
