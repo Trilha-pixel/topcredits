@@ -5,7 +5,7 @@ import { useResellerData } from '@/hooks/useResellerData';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Receipt, RefreshCw, Package, Clock, CheckCircle2, XCircle, Search, Headphones, ChevronDown, Settings, GraduationCap, LogOut } from 'lucide-react';
+import { ArrowLeft, Receipt, RefreshCw, Package, Clock, CheckCircle2, XCircle, Search, Headphones, ChevronDown, Settings, GraduationCap, LogOut, Home, ShoppingCart, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import OrderDetailSheet from '@/components/reseller/OrderDetailSheet';
@@ -310,6 +310,29 @@ const MyOrders = () => {
           </div>
         )}
       </main>
+
+      {/* Bottom Navigation - Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
+        <div className="flex items-center justify-around py-2">
+          {[
+            { key: 'home', icon: Home, label: 'Home', path: '/dashboard' },
+            { key: 'buy', icon: ShoppingCart, label: 'Comprar', path: '/pacotes' },
+            { key: 'orders', icon: Receipt, label: 'Pedidos', path: '/pedidos' },
+            { key: 'academy', icon: BookOpen, label: 'Academy', path: '/academy' },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
+                item.key === 'orders' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       <OrderDetailSheet 
         order={selectedOrder} 

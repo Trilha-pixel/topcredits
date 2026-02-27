@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, MessageCircle, Book, CreditCard, Shield, HelpCircle, ChevronRight, Headphones, ChevronDown, Settings, GraduationCap, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, MessageCircle, Book, CreditCard, Shield, HelpCircle, ChevronRight, Headphones, ChevronDown, Settings, GraduationCap, LogOut, Home, ShoppingCart, Receipt, BookOpen } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import logo from '@/assets/logo-neon.png';
 
@@ -267,6 +267,27 @@ const HelpCenter = () => {
           </Button>
         </section>
       </main>
+
+      {/* Bottom Navigation - Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
+        <div className="flex items-center justify-around py-2">
+          {[
+            { key: 'home', icon: Home, label: 'Home', path: '/dashboard' },
+            { key: 'buy', icon: ShoppingCart, label: 'Comprar', path: '/pacotes' },
+            { key: 'orders', icon: Receipt, label: 'Pedidos', path: '/pedidos' },
+            { key: 'academy', icon: BookOpen, label: 'Academy', path: '/academy' },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors text-muted-foreground hover:text-primary`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };

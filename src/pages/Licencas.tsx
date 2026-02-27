@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Key, Plus, Copy, Check, Clock, CheckCircle2, Gift, Sparkles, Calendar, Lock, Unlock, Search, RefreshCw, Coins, DollarSign, ArrowLeft, Download, ExternalLink, Headphones, ChevronDown, Settings, GraduationCap, LogOut, Play } from 'lucide-react';
+import { Key, Plus, Copy, Check, Clock, CheckCircle2, Gift, Sparkles, Calendar, Lock, Unlock, Search, RefreshCw, Coins, DollarSign, ArrowLeft, Download, ExternalLink, Headphones, ChevronDown, Settings, GraduationCap, LogOut, Play, Home, ShoppingCart, Receipt, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { licensesAPI, License, Plan } from '@/lib/licenses-api';
 import { supabase } from '@/lib/supabase';
@@ -669,6 +669,29 @@ const Licencas = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bottom Navigation - Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
+        <div className="flex items-center justify-around py-2">
+          {[
+            { key: 'home', icon: Home, label: 'Home', path: '/dashboard' },
+            { key: 'buy', icon: ShoppingCart, label: 'Comprar', path: '/pacotes' },
+            { key: 'orders', icon: Receipt, label: 'Pedidos', path: '/pedidos' },
+            { key: 'academy', icon: BookOpen, label: 'Academy', path: '/academy' },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
+                item.key === 'home' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };

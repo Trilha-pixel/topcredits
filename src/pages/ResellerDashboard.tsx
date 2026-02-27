@@ -576,19 +576,17 @@ const ResellerDashboard = () => {
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
         <div className="flex items-center justify-around py-2">
           {[
-            { key: 'home' as Tab, icon: Home, label: 'Home' },
-            { key: 'buy' as Tab, icon: ShoppingCart, label: 'Comprar' },
-            { key: 'orders' as Tab, icon: Receipt, label: 'Pedidos' },
-            { key: 'academy' as Tab, icon: BookOpen, label: 'Academy' },
+            { key: 'home' as Tab, icon: Home, label: 'Home', action: () => setActiveTab('home') },
+            { key: 'buy' as Tab, icon: ShoppingCart, label: 'Comprar', action: () => navigate('/pacotes') },
+            { key: 'orders' as Tab, icon: Receipt, label: 'Pedidos', action: () => navigate('/pedidos') },
+            { key: 'academy' as Tab, icon: BookOpen, label: 'Academy', action: () => navigate('/academy') },
           ].map(item => (
             <button
               key={item.key}
-              onClick={() => {
-                if (item.key === 'academy') navigate('/academy');
-                else setActiveTab(item.key);
-              }}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${activeTab === item.key ? 'text-primary' : 'text-muted-foreground'
-                }`}
+              onClick={item.action}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
+                activeTab === item.key ? 'text-primary' : 'text-muted-foreground'
+              }`}
             >
               <item.icon className="h-5 w-5" />
               <span className="text-[10px] font-medium">{item.label}</span>
