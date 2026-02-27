@@ -218,18 +218,45 @@ const Login = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Testimonials - Provas Sociais */}
       <section id="leaderboard" className="relative px-6 py-32">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-light text-white mb-4">
-              Clientes satisfeitos
+              Provas Reais
             </h2>
             <p className="text-lg text-slate-400">
-              Veja o que nossos clientes dizem sobre comprar créditos Lovable conosco
+              Veja depoimentos reais de clientes que compraram créditos Lovable conosco
             </p>
           </div>
 
+          {/* Galeria de Provas Sociais */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {[1, 2, 3, 4, 5, 6].map((num) => (
+              <div 
+                key={num}
+                className="relative aspect-square rounded-2xl overflow-hidden bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all duration-300 group cursor-pointer"
+              >
+                <img 
+                  src={`/testimonials/t${num}.jpeg`}
+                  alt={`Depoimento ${num}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    // Fallback se a imagem não existir
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = `
+                      <div class="flex items-center justify-center h-full p-6">
+                        <p class="text-slate-400 text-sm text-center">Depoimento ${num}</p>
+                      </div>
+                    `;
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            ))}
+          </div>
+
+          {/* Depoimento em Destaque */}
           <Card className="p-12 bg-slate-950/50 backdrop-blur-sm border-slate-900">
             <div className="text-center space-y-8">
               <p className="text-xl md:text-2xl text-slate-300 font-light leading-relaxed">
