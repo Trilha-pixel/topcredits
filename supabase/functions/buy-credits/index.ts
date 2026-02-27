@@ -1,5 +1,5 @@
 // Edge Function: buy-credits
-// Processa a entrega automática de créditos Lovable quando um pedido é pago
+// Processa a entrega automática de créditos Lovable via LVB Credits API
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -9,13 +9,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface OrderPayload {
-  order_id: string
+const LVB_API_BASE = 'https://api.lvbcredits.com'
+
+interface OrderRecord {
+  id: string
   user_id: string
   product_id: number
-  credits_amount: number
+  quantity: number
   lovable_email: string
-  price: number
+  price_at_purchase: number
 }
 
 serve(async (req) => {
@@ -31,85 +33,86 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // Parse request body
-    const payload: OrderPayload = await req.json()
-    console.log('Processing order:', payload.order_id)
-
-    // 1. Gerar código único de resgate
-    const deliveryCode = generateDeliveryCode()
+    const lvbApiKey = Deno.env.get('LVB_CREDITS_API_KEY')
     
-    // 2. Buscar link base do produto
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('delivery_link')
-      .eq('id', payload.product_id)
-      .single()
-
-    if (productError) {
-      throw new Error(`Erro ao buscar produto: ${productError.message}`)
+    if (!lvbApiKey) {
+      throw new Error('LVB_CREDITS_API_KEY não configurada')
     }
 
-    // 3. Construir link de entrega completo
-    const baseLink = product.delivery_link || 'https://lovable.dev/redeem'
-    const deliveryLink = `${baseLink}?code=${deliveryCode}&credits=${payload.credits_amount}&email=${encodeURIComponent(payload.lovable_email)}`
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // 4. Atualizar pedido com link de entrega
+    // Parse request body - expecting { record: OrderRecord }
+    const { record } = await req.json()
+    console.log('[buy-credits] Processing order:', record.id)
+
+    // 1. Criar pedido na API do LVB Credits
+    console.log('[buy-credits] Creating order in LVB Credits API...')
+    const lvbResponse = await fetch(`${LVB_API_BASE}/api/v1/revenda/pedidos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${lvbApiKey}`
+      },
+      body: JSON.stringify({
+        creditos: record.quantity
+      })
+    })
+
+    if (!lvbResponse.ok) {
+      const errorData = await lvbResponse.json().catch(() => ({}))
+      throw new Error(`LVB API Error: ${errorData.error || lvbResponse.statusText}`)
+    }
+
+    const lvbData = await lvbResponse.json()
+    console.log('[buy-credits] LVB Order created:', lvbData.data.pedidoId)
+
+    // 2. Configurar entrega por email
+    console.log('[buy-credits] Setting delivery type to email...')
+    const deliveryResponse = await fetch(
+      `${LVB_API_BASE}/api/v1/revenda/pedidos/${lvbData.data.pedidoId}/tipo-entrega`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${lvbApiKey}`
+        },
+        body: JSON.stringify({
+          tipo: 'email',
+          dados: {
+            email: record.lovable_email
+          }
+        })
+      }
+    )
+
+    if (!deliveryResponse.ok) {
+      console.error('[buy-credits] Failed to set delivery type')
+    }
+
+    // 3. Atualizar pedido local com informações do LVB
     const { error: updateError } = await supabase
       .from('orders')
       .update({
-        delivery_link: deliveryLink,
-        delivery_code: deliveryCode,
-        completed_at: new Date().toISOString(),
-        status: 'completed'
+        delivery_link: lvbData.data.linkCliente,
+        external_order_id: lvbData.data.pedidoId,
+        status: 'completed',
+        completed_at: new Date().toISOString()
       })
-      .eq('id', payload.order_id)
+      .eq('id', record.id)
 
     if (updateError) {
+      console.error('[buy-credits] Error updating order:', updateError)
       throw new Error(`Erro ao atualizar pedido: ${updateError.message}`)
     }
 
-    // 5. Registrar transação de compra (se ainda não existir)
-    const { error: transactionError } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: payload.user_id,
-        type: 'purchase',
-        amount: -payload.price,
-        description: `Compra de ${payload.credits_amount} créditos Lovable`
-      })
-
-    if (transactionError) {
-      console.error('Erro ao registrar transação:', transactionError)
-      // Não falha a entrega se a transação falhar
-    }
-
-    // 6. TODO: Integrar com API do Lovable para entrega real
-    // const lovableResponse = await deliverToLovable({
-    //   email: payload.lovable_email,
-    //   credits: payload.credits_amount,
-    //   code: deliveryCode
-    // })
-
-    // 7. TODO: Enviar email de confirmação ao cliente
-    // await sendConfirmationEmail({
-    //   email: payload.lovable_email,
-    //   deliveryLink: deliveryLink,
-    //   credits: payload.credits_amount
-    // })
-
-    console.log('Entrega processada com sucesso:', {
-      order_id: payload.order_id,
-      delivery_code: deliveryCode
-    })
+    console.log('[buy-credits] Order processed successfully')
 
     return new Response(
       JSON.stringify({
         success: true,
-        order_id: payload.order_id,
-        delivery_code: deliveryCode,
-        delivery_link: deliveryLink,
+        order_id: record.id,
+        lvb_order_id: lvbData.data.pedidoId,
+        delivery_link: lvbData.data.linkCliente,
         message: 'Créditos entregues com sucesso'
       }),
       {
@@ -119,7 +122,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Erro ao processar entrega:', error)
+    console.error('[buy-credits] Error processing delivery:', error)
     
     return new Response(
       JSON.stringify({
@@ -133,58 +136,3 @@ serve(async (req) => {
     )
   }
 })
-
-// Gera código único de resgate (12 caracteres alfanuméricos)
-function generateDeliveryCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Remove caracteres ambíguos
-  let code = ''
-  for (let i = 0; i < 12; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return code
-}
-
-// TODO: Implementar integração com Lovable
-// async function deliverToLovable(data: {
-//   email: string
-//   credits: number
-//   code: string
-// }) {
-//   // Chamar API do Lovable para entregar créditos
-//   const response = await fetch('https://api.lovable.dev/credits/deliver', {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`
-//     },
-//     body: JSON.stringify(data)
-//   })
-//   return response.json()
-// }
-
-// TODO: Implementar envio de email
-// async function sendConfirmationEmail(data: {
-//   email: string
-//   deliveryLink: string
-//   credits: number
-// }) {
-//   // Usar Resend, SendGrid, ou outro serviço de email
-//   // const response = await fetch('https://api.resend.com/emails', {
-//   //   method: 'POST',
-//   //   headers: {
-//   //     'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-//   //     'Content-Type': 'application/json'
-//   //   },
-//   //   body: JSON.stringify({
-//   //     from: 'Top Créditos <noreply@topcreditos.com.br>',
-//   //     to: data.email,
-//   //     subject: `Seus ${data.credits} créditos Lovable estão prontos!`,
-//   //     html: `
-//   //       <h1>Créditos Lovable Entregues!</h1>
-//   //       <p>Seus ${data.credits} créditos foram entregues com sucesso.</p>
-//   //       <p><a href="${data.deliveryLink}">Clique aqui para resgatar</a></p>
-//   //     `
-//   //   })
-//   // })
-//   // return response.json()
-// }
