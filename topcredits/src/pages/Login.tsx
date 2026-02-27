@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Shield, Headphones, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Zap, Shield, Headphones, CheckCircle2, ArrowRight, Instagram, Youtube, Users, Star, Play } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -184,7 +184,7 @@ const Login = () => {
             </div>
 
             {/* Gamified Proofs Gallery */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-32 relative z-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative z-10">
               {proofImages.map((img, idx) => (
                 <div 
                   key={idx} 
@@ -207,37 +207,121 @@ const Login = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
 
-            {/* Text Testimonials */}
-            <div className="relative p-12 md:p-20 rounded-[3rem] bg-white/[0.02] border border-white/10 overflow-hidden mt-24">
-              {/* Decorative blur */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        {/* Creator Identity / Trust Section */}
+        <section className="relative px-6 py-32 border-t border-white/5 bg-black overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-white/[0.01] rounded-full blur-3xl pointer-events-none" />
+
+          <div className="container mx-auto max-w-6xl relative z-10">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
               
-              <div className="relative z-10 text-center space-y-12">
-                <p className="text-2xl md:text-4xl text-neutral-200 font-light leading-snug tracking-tight">
-                  "{testimonials[testimonialIndex].text}"
+              {/* Creator Info */}
+              <div className="space-y-8 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2">
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-xs font-semibold text-neutral-300 tracking-wide uppercase">Fundador & Desenvolvedor</span>
+                </div>
+                
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white">
+                  Quem está por trás da <br className="hidden lg:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-500">Top Créditos?</span>
+                </h2>
+                
+                <p className="text-lg text-neutral-400 font-light leading-relaxed max-w-xl mx-auto lg:mx-0">
+                  Sou o <strong className="text-white font-medium">Felipe Top</strong>, especialista em Inteligência Artificial e automações. 
+                  Construo soluções que otimizam o seu tempo e elevo a sua operação para outro nível. 
+                  A Top Créditos nasceu para resolver um problema real com eficiência e transparência.
                 </p>
 
-                <div>
-                  <p className="text-lg font-semibold text-white">{testimonials[testimonialIndex].name}</p>
-                  <p className="text-sm text-neutral-500 font-medium tracking-wide mt-1">{testimonials[testimonialIndex].role} • {testimonials[testimonialIndex].company}</p>
-                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-6 pt-4 justify-center lg:justify-start">
+                  {/* YouTube Metric */}
+                  <a href="https://youtube.com/@realfelipetop" target="_blank" rel="noopener noreferrer" 
+                    className="group flex items-center gap-4 p-4 pr-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] transition-all duration-300 w-full sm:w-auto">
+                    <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                      <Youtube className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xl font-bold text-white tracking-tight">2.2K+</p>
+                      <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Inscritos no YouTube</p>
+                    </div>
+                  </a>
 
-                <div className="flex items-center justify-center gap-3">
-                  {testimonials.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setTestimonialIndex(i)}
-                      className={`h-2 rounded-full transition-all duration-500 ${
-                        i === testimonialIndex
-                          ? 'bg-white w-10'
-                          : 'bg-white/20 w-2 hover:bg-white/40'
-                      }`}
-                      aria-label={`Ver depoimento ${i + 1}`}
-                    />
-                  ))}
+                  {/* Instagram Metric */}
+                  <a href="https://instagram.com/realfelipetop" target="_blank" rel="noopener noreferrer" 
+                    className="group flex items-center gap-4 p-4 pr-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] transition-all duration-300 w-full sm:w-auto">
+                    <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform">
+                      <Instagram className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xl font-bold text-white tracking-tight">19.9K+</p>
+                      <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Seguidores no Insta</p>
+                    </div>
+                  </a>
                 </div>
               </div>
+
+              {/* Creator Visual Showcase */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-neutral-900 to-transparent rounded-[3rem] -rotate-3 scale-[1.02] border border-white/5" />
+                <div className="relative bg-neutral-950 border border-white/10 p-2 rounded-[3rem] overflow-hidden shadow-2xl">
+                  
+                  {/* Social Profile Mockup */}
+                  <div className="bg-black rounded-[2.5rem] p-8 border border-white/5">
+                    <div className="flex items-center gap-6 mb-8">
+                      <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-500">
+                        <div className="w-full h-full rounded-full border-4 border-black overflow-hidden relative">
+                           <img 
+                             src="/felipe-avatar.jpeg" 
+                             alt="Felipe Top" 
+                             className="w-full h-full object-cover"
+                           />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-xl font-bold text-white">realfelipetop</h3>
+                          <CheckCircle2 className="w-4 h-4 text-blue-400 fill-blue-400" />
+                        </div>
+                        <p className="text-sm text-neutral-400 font-medium mb-3">Felipe Top 🔝</p>
+                        <div className="flex gap-4 text-sm">
+                          <span className="text-neutral-300"><strong className="text-white">45</strong> publ</span>
+                          <span className="text-neutral-300"><strong className="text-white">19,9 mil</strong> seg</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-neutral-300 leading-relaxed mb-6 font-light">
+                      Dev & Fundador <span className="text-blue-400 hover:underline cursor-pointer">@forfy.ai</span><br/>
+                      Expert em I.A e automações<br/>
+                      Aqui eu mostro os bastidores da minha startup
+                    </p>
+
+                    {/* Content Preview Grid */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="aspect-square bg-neutral-900 rounded-xl overflow-hidden relative group cursor-pointer border border-white/5">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                      <div className="aspect-square bg-neutral-800 rounded-xl overflow-hidden relative group cursor-pointer border border-white/5">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                      <div className="aspect-square bg-neutral-900 rounded-xl overflow-hidden relative group cursor-pointer border border-white/5">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
