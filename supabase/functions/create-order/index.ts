@@ -9,9 +9,12 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-    // Preflight
+    // Preflight - MUST return 200 status
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+        return new Response(null, { 
+            status: 200,
+            headers: corsHeaders 
+        });
     }
 
     console.log(`[create-order] Nova requisição recebida: ${req.method}`);

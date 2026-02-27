@@ -32,21 +32,40 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session?.access_token) {
         toast.error('Sessão expirada. Faça login novamente.');
+        setLoading(false);
         return;
       }
 
+      // Log para debug
+      console.log('[PurchaseModal] Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('[PurchaseModal] Function URL:', `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-order`);
+      console.log('[PurchaseModal] Enviando pedido para create-order...');
+      console.log('[PurchaseModal] Product ID:', product.id);
+      console.log('[PurchaseModal] Customer Name:', customerName.trim() || 'N/A');
+
+      // Using supabase.functions.invoke with explicit headers
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
           productId: product.id,
           customerName: customerName.trim() || undefined
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 
-      if (error) throw error;
+      console.log('[PurchaseModal] Resposta recebida:', { data, error });
 
-      if (data.error) {
+      if (error) {
+        console.error('[PurchaseModal] Erro na invocação:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('[PurchaseModal] Erro no data:', data.error);
         throw new Error(data.error);
       }
 
@@ -55,7 +74,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
       onOpenChange(false);
 
     } catch (error: any) {
-      console.error('Erro na compra:', error);
+      console.error('[PurchaseModal] Erro na compra:', error);
       toast.error(error.message || 'Erro ao processar compra.');
     } finally {
       setLoading(false);
