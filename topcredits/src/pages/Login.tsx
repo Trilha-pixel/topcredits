@@ -22,6 +22,15 @@ const Login = () => {
     }
   };
 
+  const proofImages = [
+    { src: '/testimonials/t1.jpeg', alt: 'Comprovante 1' },
+    { src: '/testimonials/t2.jpeg', alt: 'Comprovante 2' },
+    { src: '/testimonials/t3.jpeg', alt: 'Comprovante 3' },
+    { src: '/testimonials/t4.jpeg', alt: 'Comprovante 4' },
+    { src: '/testimonials/t5.jpeg', alt: 'Comprovante 5' },
+    { src: '/testimonials/t6.jpeg', alt: 'Comprovante 6' }
+  ];
+
   const testimonials = [
     {
       name: 'Ana Paula Silva',
@@ -162,16 +171,45 @@ const Login = () => {
           </div>
         </section>
 
-        {/* Testimonials */}
-        <section id="leaderboard" className="relative px-6 py-32 border-t border-white/5">
-          <div className="container mx-auto max-w-5xl">
-            <div className="text-center mb-20">
+        {/* Testimonials & Proofs */}
+        <section id="leaderboard" className="relative px-6 py-32 border-t border-white/5 bg-gradient-to-b from-neutral-950 to-black overflow-hidden">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-20 relative z-10">
               <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
-                Clientes Satisfeitos
+                A Prova Social
               </h2>
+              <p className="text-xl text-neutral-400 font-light">
+                Quem usa, aprova. Veja os últimos comprovantes reais da nossa comunidade.
+              </p>
             </div>
 
-            <div className="relative p-12 md:p-20 rounded-[3rem] bg-white/[0.02] border border-white/10 overflow-hidden">
+            {/* Gamified Proofs Gallery */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-32 relative z-10">
+              {proofImages.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  className={`group relative aspect-[3/4] rounded-2xl overflow-hidden bg-white/5 border border-white/10 transition-all duration-500 hover:z-20 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] ${
+                    idx % 2 === 0 ? 'translate-y-4 md:translate-y-8' : '-translate-y-4 md:-translate-y-8'
+                  }`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <img 
+                    src={img.src} 
+                    alt={img.alt} 
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110 filter saturate-[0.8] group-hover:saturate-100"
+                  />
+                  <div className="absolute bottom-4 left-4 right-4 z-20 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-white bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full w-fit">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                      Entrega Confirmada
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Text Testimonials */}
+            <div className="relative p-12 md:p-20 rounded-[3rem] bg-white/[0.02] border border-white/10 overflow-hidden mt-24">
               {/* Decorative blur */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
               
