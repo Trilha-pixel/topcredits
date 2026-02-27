@@ -39,21 +39,25 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
       }
 
       // Log para debug
+      console.log('[PurchaseModal] Session exists:', !!session);
+      console.log('[PurchaseModal] Access token exists:', !!session.access_token);
+      console.log('[PurchaseModal] User:', session.user?.email);
+      console.log('[PurchaseModal] Token expires at:', new Date(session.expires_at! * 1000).toISOString());
       console.log('[PurchaseModal] Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
       console.log('[PurchaseModal] Function URL:', `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-order`);
       console.log('[PurchaseModal] Enviando pedido para create-order...');
       console.log('[PurchaseModal] Product ID:', product.id);
       console.log('[PurchaseModal] Customer Name:', customerName.trim() || 'N/A');
 
-      // Using supabase.functions.invoke with explicit headers
+      // Using supabase.functions.invoke - it automatically adds the auth header
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
           productId: product.id,
           customerName: customerName.trim() || undefined
         },
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         }
       });
 

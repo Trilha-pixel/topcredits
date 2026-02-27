@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0"
 
@@ -20,7 +19,10 @@ Deno.serve(async (req) => {
     console.log(`[create-order] Nova requisição recebida: ${req.method}`);
 
     if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
+            status: 405, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
     }
 
     try {
@@ -38,14 +40,21 @@ Deno.serve(async (req) => {
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
         if (userError || !user) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+                status: 401, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            });
         }
+
+        console.log(`[create-order] User authenticated: ${user.email}`);
 
         // 2. Body Parsing
         const { productId, customerName } = await req.json();
         if (!productId) throw new Error('Product ID required');
 
-        // 3. Get Product (with delivery link)
+        console.log(`[create-order] Product ID: ${productId}`);
+
+        // 3. Get Product
         const { data: product, error: prodError } = await supabaseClient
             .from('products')
             .select('*')
@@ -53,8 +62,11 @@ Deno.serve(async (req) => {
             .single();
 
         if (prodError || !product) {
+            console.error('[create-order] Product not found:', prodError);
             throw new Error('Produto não encontrado');
         }
+
+        console.log(`[create-order] Product found: ${product.name} - R$ ${product.price}`);
 
         // 4. Check Balance
         const { data: wallet, error: walletError } = await supabaseClient
@@ -63,13 +75,14 @@ Deno.serve(async (req) => {
             .eq('user_id', user.id)
             .single();
 
-        // Se não tiver wallet, assume saldo 0
         let currentBalance = 0;
         if (wallet) {
             currentBalance = wallet.balance;
         } else if (walletError && walletError.code !== 'PGRST116') {
-            throw walletError; // Erro real de banco
+            throw walletError;
         }
+
+        console.log(`[create-order] Current balance: R$ ${currentBalance}`);
 
         if (currentBalance < product.price) {
             return new Response(JSON.stringify({ error: 'Saldo insuficiente. Faça um depósito via PIX.' }), {
@@ -78,7 +91,7 @@ Deno.serve(async (req) => {
             });
         }
 
-        // 5. Execute Transaction (Atomic-like)
+        // 5. Execute Transaction
         // 5.1 Debit Balance
         const newBalance = currentBalance - product.price;
         const { error: updateError } = await supabaseClient
@@ -91,18 +104,19 @@ Deno.serve(async (req) => {
 
         if (updateError) throw new Error('Falha ao debitar saldo: ' + updateError.message);
 
+        console.log(`[create-order] Balance updated: R$ ${newBalance}`);
+
         // 5.2 Log Transaction
         await supabaseClient.from('transactions').insert({
             user_id: user.id,
             type: 'purchase',
-            amount: product.price, // Negativo? Geralmente Purchase é positivo e type define saída
+            amount: product.price,
             status: 'completed',
             description: `Compra: ${product.name}`,
             date: new Date().toISOString()
         });
 
-        // 5.3 Create Order (Pending Delivery)
-        // Entrega manual pela equipe posteriormente (Staff)
+        // 5.3 Create Order - FIXED: usando credits_amount ao invés de quantity
         const { data: order, error: orderError } = await supabaseClient
             .from('orders')
             .insert({
@@ -111,19 +125,22 @@ Deno.serve(async (req) => {
                 product_name: product.name,
                 price_at_purchase: product.price,
                 lovable_email: user.email,
-                status: 'completed', // Pagamento via saldo = Concluído automaticamente
+                status: 'completed',
+                credits_amount: product.credits_amount, // ✅ CORRETO - usa credits_amount
                 delivery_link: null,
-                created_at: new Date().toISOString(),
-                quantity: product.credits_amount, // Automatiza quantidade para compra externa
-                customer_name: customerName || null
+                created_at: new Date().toISOString()
             })
             .select()
             .single();
 
-        if (orderError) throw new Error('Erro ao criar pedido: ' + orderError.message);
+        if (orderError) {
+            console.error('[create-order] Order creation error:', orderError);
+            throw new Error('Erro ao criar pedido: ' + orderError.message);
+        }
+
+        console.log(`[create-order] Order created: ${order.id}`);
 
         // 6. Trigger Async Fulfillment (Fire and Forget)
-        // Chamamos a função buy-credits para processar a entrega em segundo plano
         const functionsUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/buy-credits`;
         const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -135,18 +152,15 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({ record: order })
         }).then(res => {
-            console.log(`[create-order] Acionou buy-credits: ${res.status}`);
+            console.log(`[create-order] buy-credits triggered: ${res.status}`);
         }).catch(err => {
-            console.error(`[create-order] Erro ao acionar buy-credits:`, err);
+            console.error(`[create-order] buy-credits error:`, err);
         });
 
-        // Garante que a função continue rodando em background mesmo após responder ao usuário
+        // @ts-ignore
         if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+            // @ts-ignore
             EdgeRuntime.waitUntil(fulfillmentPromise);
-        } else {
-            // Fallback para ambientes dev/test: não aguarda, mas corre risco de corte
-            // Mas em produção no Supabase, waitUntil deve existir.
-            console.log('EdgeRuntime.waitUntil não disponível, background fetch disparado.');
         }
 
         return new Response(JSON.stringify({ success: true, order }), {
@@ -157,8 +171,7 @@ Deno.serve(async (req) => {
     } catch (error) {
         console.error('[create-order] Erro Crítico:', error);
         return new Response(JSON.stringify({
-            error: error.message,
-            stack: error.stack
+            error: error.message
         }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
