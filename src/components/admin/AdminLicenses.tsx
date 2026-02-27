@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { 
   Key, Search, Filter, Download, RefreshCw, 
-  CheckCircle2, XCircle, Clock, AlertCircle, ArrowLeft 
+  CheckCircle2, XCircle, Clock, AlertCircle, ArrowLeft, Sparkles 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { licensesAPI } from '@/lib/licenses-api';
 import { useNavigate } from 'react-router-dom';
+import StatCard from './StatCard';
 
 interface License {
   id: string;
@@ -118,79 +119,62 @@ const AdminLicenses: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <Button 
-        onClick={() => navigate('/dashboard')} 
-        variant="ghost" 
-        size="sm"
-        className="text-muted-foreground hover:text-foreground -ml-2"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar ao Dashboard
-      </Button>
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Key className="h-6 w-6 text-primary" />
-            Gerenciar Licenças
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Visão completa de todas as licenças do sistema
-          </p>
+      {/* Header com gradiente */}
+      <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-accent/5 p-8">
+        <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+        
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <Key className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-foreground">Gerenciar Licenças</h2>
+                <p className="text-sm text-muted-foreground">
+                  Visão completa de todas as licenças do sistema
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button onClick={loadLicenses} variant="outline" size="sm" className="shadow-lg">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
         </div>
-        <Button onClick={loadLicenses} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Atualizar
-        </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards com novo design */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 border-border bg-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase">Total</p>
-              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-            </div>
-            <Key className="h-8 w-8 text-primary opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="p-4 border-green-500/20 bg-green-500/5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase">Ativas</p>
-              <p className="text-2xl font-bold text-green-500">{stats.active}</p>
-            </div>
-            <CheckCircle2 className="h-8 w-8 text-green-500 opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="p-4 border-orange-500/20 bg-orange-500/5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase">Expiradas</p>
-              <p className="text-2xl font-bold text-orange-500">{stats.expired}</p>
-            </div>
-            <Clock className="h-8 w-8 text-orange-500 opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="p-4 border-red-500/20 bg-red-500/5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase">Bloqueadas</p>
-              <p className="text-2xl font-bold text-red-500">{stats.blocked}</p>
-            </div>
-            <XCircle className="h-8 w-8 text-red-500 opacity-50" />
-          </div>
-        </Card>
+        <StatCard
+          title="Total de Licenças"
+          value={stats.total}
+          icon={Key}
+          variant="default"
+        />
+        <StatCard
+          title="Licenças Ativas"
+          value={stats.active}
+          icon={CheckCircle2}
+          variant="success"
+        />
+        <StatCard
+          title="Expiradas"
+          value={stats.expired}
+          icon={Clock}
+          variant="warning"
+        />
+        <StatCard
+          title="Bloqueadas"
+          value={stats.blocked}
+          icon={XCircle}
+          variant="default"
+        />
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Filters com design melhorado */}
+      <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
         <div className="flex-1 flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -199,10 +183,10 @@ const AdminLicenses: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-9"
+              className="pl-9 bg-background/50"
             />
           </div>
-          <Button onClick={handleSearch} variant="secondary">
+          <Button onClick={handleSearch} className="shadow-lg">
             <Search className="h-4 w-4" />
           </Button>
         </div>
@@ -212,6 +196,7 @@ const AdminLicenses: React.FC = () => {
             variant={statusFilter === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter('all')}
+            className="shadow-sm"
           >
             Todas
           </Button>
@@ -219,6 +204,7 @@ const AdminLicenses: React.FC = () => {
             variant={statusFilter === 'Ativa' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter('Ativa')}
+            className="shadow-sm"
           >
             Ativas
           </Button>
@@ -226,6 +212,7 @@ const AdminLicenses: React.FC = () => {
             variant={statusFilter === 'Expirada' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter('Expirada')}
+            className="shadow-sm"
           >
             Expiradas
           </Button>
@@ -233,21 +220,28 @@ const AdminLicenses: React.FC = () => {
             variant={statusFilter === 'Bloqueada' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setStatusFilter('Bloqueada')}
+            className="shadow-sm"
           >
             Bloqueadas
           </Button>
         </div>
       </div>
 
-      {/* Licenses Table */}
+      {/* Licenses Table com cards melhorados */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="relative">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-primary animate-pulse" />
+          </div>
         </div>
       ) : licenses.length === 0 ? (
-        <Card className="p-12 text-center border-dashed">
-          <Key className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground">Nenhuma licença encontrada</p>
+        <Card className="p-12 text-center border-dashed border-2">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+            <Key className="h-8 w-8 text-muted-foreground opacity-50" />
+          </div>
+          <p className="text-lg font-medium text-foreground mb-1">Nenhuma licença encontrada</p>
+          <p className="text-sm text-muted-foreground">Tente ajustar os filtros de busca</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -256,40 +250,45 @@ const AdminLicenses: React.FC = () => {
             const StatusIcon = statusConfig.icon;
 
             return (
-              <Card key={license.id} className="p-4 border-border hover:border-primary/50 transition-colors">
+              <Card key={license.id} className="p-5 border-border hover:border-primary/50 hover:shadow-lg transition-all duration-200 bg-card/50 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-foreground">{license.client_name}</h3>
-                      <Badge variant="outline" className={statusConfig.className}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {statusConfig.label}
-                      </Badge>
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                        <Key className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="font-semibold text-lg text-foreground">{license.client_name}</h3>
+                        <Badge variant="outline" className={`${statusConfig.className} shadow-sm`}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {statusConfig.label}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Chave:</span>
-                        <p className="font-mono text-xs text-foreground">{license.key}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Chave</span>
+                        <p className="font-mono text-xs text-foreground bg-muted/50 px-2 py-1 rounded">{license.key}</p>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Plano:</span>
-                        <p className="text-foreground">{license.plan}</p>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Plano</span>
+                        <p className="text-foreground font-medium">{license.plan}</p>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Expira em:</span>
-                        <p className="text-foreground">{formatDate(license.expires_at)}</p>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Expira em</span>
+                        <p className="text-foreground font-medium">{formatDate(license.expires_at)}</p>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Criada em:</span>
-                        <p className="text-foreground">{formatDate(license.created_at)}</p>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Criada em</span>
+                        <p className="text-foreground font-medium">{formatDate(license.created_at)}</p>
                       </div>
                     </div>
 
                     {license.client_whatsapp && (
-                      <div className="text-sm">
+                      <div className="flex items-center gap-2 text-sm pt-2 border-t border-border/50">
                         <span className="text-muted-foreground">WhatsApp:</span>
-                        <span className="ml-2 text-foreground">{license.client_whatsapp}</span>
+                        <span className="font-medium text-foreground">{license.client_whatsapp}</span>
                       </div>
                     )}
                   </div>

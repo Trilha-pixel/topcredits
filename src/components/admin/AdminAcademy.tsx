@@ -19,7 +19,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Plus, Edit, Trash2, Video, Clock, GripVertical, Upload, X, Download, FileText, File as FileIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Video, Clock, GripVertical, Upload, X, Download, FileText, File as FileIcon, GraduationCap, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -231,21 +231,32 @@ const AdminAcademy = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Gerenciar Academy</h2>
-                    <p className="text-muted-foreground">Crie módulos e aulas para a área de aprendizado.</p>
+            {/* Header com gradiente */}
+            <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-accent/5 p-8">
+                <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+                <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+                
+                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                            <GraduationCap className="h-7 w-7 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-bold tracking-tight text-foreground">Gerenciar Academy</h2>
+                            <p className="text-sm text-muted-foreground">Crie módulos e aulas para a área de aprendizado</p>
+                        </div>
+                    </div>
+                    <Button onClick={() => handleOpenModuleModal()} className="shadow-lg">
+                        <Plus className="mr-2 h-4 w-4" /> Novo Módulo
+                    </Button>
                 </div>
-                <Button onClick={() => handleOpenModuleModal()}>
-                    <Plus className="mr-2 h-4 w-4" /> Novo Módulo
-                </Button>
             </div>
 
             <Accordion type="single" collapsible className="w-full space-y-4">
                 {modules.map((module) => {
                     const moduleLessons = lessons.filter(l => l.module_id === module.id).sort((a, b) => a.display_order - b.display_order);
                     return (
-                        <AccordionItem key={module.id} value={module.id} className="border border-border rounded-lg bg-card px-4">
+                        <AccordionItem key={module.id} value={module.id} className="border border-border rounded-xl bg-card/50 backdrop-blur-sm px-4 hover:border-primary/50 transition-all">
                             <div className="flex items-center justify-between w-full py-4">
                                 <AccordionTrigger className="hover:no-underline py-0 flex-1">
                                     <div className="flex items-center gap-3 text-left">

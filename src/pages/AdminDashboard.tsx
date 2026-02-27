@@ -19,7 +19,7 @@ import {
   Copy, Check, X, TrendingUp, Users,
   Clock, CheckCircle2, XCircle, Search, DollarSign,
   BarChart3, Package, UserCheck, UserX, ArrowUpRight,
-  Link, ExternalLink, Send, ArrowLeft, UserPlus, Mail, ShoppingCart, Plus, Edit, Trash2, GraduationCap, Key
+  Link, ExternalLink, Send, ArrowLeft, UserPlus, Mail, ShoppingCart, Plus, Edit, Trash2, GraduationCap, Key, LayoutDashboard, LogOut, Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ import AdminAcademy from '@/components/admin/AdminAcademy';
 import AdminLicenses from '@/components/admin/AdminLicenses';
 import { Order, Profile, Product } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 const statusConfig = {
   pending: { label: 'Pendente', icon: Clock, className: 'bg-warning/10 text-warning border-warning/20', pulse: true },
