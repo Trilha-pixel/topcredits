@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import OrderDetailSheet from '@/components/reseller/OrderDetailSheet';
 import { Order } from '@/types';
 import logo from '@/assets/logo-neon.png';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
 
@@ -78,11 +79,7 @@ const MyOrders = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (

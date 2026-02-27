@@ -20,6 +20,7 @@ import { Product, Order } from '@/types';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import logo from '@/assets/logo-neon.png';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 type Tab = 'home' | 'buy' | 'orders' | 'academy';
 type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
@@ -121,11 +122,7 @@ const ResellerDashboard = () => {
   ];
 
   if (loadingData || loadingProducts) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (

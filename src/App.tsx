@@ -13,6 +13,7 @@ import Licencas from "./pages/Licencas";
 import MyOrders from "./pages/MyOrders";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
+import LoadingScreen from "./components/ui/LoadingScreen";
 
 const queryClient = new QueryClient();
 
@@ -20,11 +21,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) return <Navigate to="/" replace />;

@@ -14,6 +14,8 @@ import { supabase } from '@/lib/supabase';
 import { getLicenseErrorMessage, getTokenErrorMessage } from '@/lib/error-messages';
 import logo from '@/assets/logo-neon.png';
 import SimplePurchaseModal from '@/components/licenses/SimplePurchaseModal';
+import DepositModal from '@/components/reseller/DepositModal';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 const Licencas = () => {
   const { logout, user } = useAuth();
@@ -31,6 +33,7 @@ const Licencas = () => {
   
   const [generateModal, setGenerateModal] = useState(false);
   const [trialModal, setTrialModal] = useState(false);
+  const [depositModal, setDepositModal] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [total, setTotal] = useState(0);
@@ -178,11 +181,7 @@ const Licencas = () => {
   const blockedLicenses = licenses.filter(l => l.status === 'Bloqueada').length;
 
   if (isLoading && licenses.length === 0) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -415,7 +414,7 @@ const Licencas = () => {
               </div>
               <p className="text-4xl font-bold text-primary mb-4">R$ {walletBalance.toFixed(2)}</p>
               <Button 
-                onClick={() => navigate('/dashboard')} 
+                onClick={() => setDepositModal(true)} 
                 size="sm" 
                 variant="outline" 
                 className="w-full border-primary/30 hover:bg-primary/10 text-primary hover:text-primary"
@@ -692,6 +691,9 @@ const Licencas = () => {
           ))}
         </div>
       </nav>
+
+      {/* Modals */}
+      <DepositModal open={depositModal} onOpenChange={setDepositModal} />
     </div>
   );
 };
