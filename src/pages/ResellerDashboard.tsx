@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useResellerData } from '@/hooks/useResellerData';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
-import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles, Headphones, ChevronDown, Settings, GraduationCap, LogOut, User } from 'lucide-react';
+import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles, Headphones, ChevronDown, Settings, GraduationCap, LogOut, User, Image as ImageIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import BalanceCard from '@/components/reseller/BalanceCard';
@@ -242,39 +242,45 @@ const ResellerDashboard = () => {
 
       <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
         {/* Greeting - Minimalista */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-light text-foreground">
-            Olá, {user?.full_name ? user.full_name.split(' ')[0] : 'Cliente'}
+        <div className="space-y-2 pt-4">
+          <h1 className="text-4xl font-semibold tracking-tight text-white">
+            Bem-vindo de volta{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}.
           </h1>
-          <p className="text-muted-foreground">Compre créditos Lovable de forma rápida e segura</p>
+          <p className="text-lg text-neutral-400 font-light">Seu painel de controle de créditos Lovable.</p>
         </div>
 
         {/* Balance Hero - Redesenhado */}
         {user ? (
-          <section className="rounded-md border border-border bg-[#0A0A0A] p-10">
-            <div className="flex items-center justify-between mb-10">
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Saldo Disponível</p>
-                <h2 className="text-6xl font-light text-foreground tracking-tight" style={{ letterSpacing: '-0.03em' }}>
+          <section className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md p-8 md:p-10 relative overflow-hidden">
+            {/* Ambient glow */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 relative z-10 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium tracking-widest text-neutral-500 uppercase flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Saldo Disponível
+                </p>
+                <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tighter">
                   R$ {balance.toFixed(2)}
                 </h2>
               </div>
-              <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-md px-8 h-12 font-bold" style={{ letterSpacing: '-0.01em' }}>
-                Depositar
+              <Button onClick={() => setDepositModal(true)} size="lg" className="rounded-full px-8 h-14 font-semibold bg-white text-black hover:bg-neutral-200 transition-all hover:scale-105 shrink-0 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                Adicionar Fundos
               </Button>
             </div>
-            <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border/50">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Gasto Total</p>
-                <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-white/10 relative z-10">
+              <div className="space-y-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                <p className="text-xs uppercase tracking-widest text-neutral-500 font-medium">Gasto Total</p>
+                <p className="text-2xl font-semibold text-white">R$ {transactions.filter(t => t.type === 'purchase').reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Pedidos</p>
-                <p className="text-2xl font-light text-foreground">{orders.length}</p>
+              <div className="space-y-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                <p className="text-xs uppercase tracking-widest text-neutral-500 font-medium">Pedidos Totais</p>
+                <p className="text-2xl font-semibold text-white">{orders.length}</p>
               </div>
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground/60 font-medium">Último Depósito</p>
-                <p className="text-2xl font-light text-foreground">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
+              <div className="space-y-2 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                <p className="text-xs uppercase tracking-widest text-neutral-500 font-medium">Último Depósito</p>
+                <p className="text-2xl font-semibold text-white">R$ {transactions.filter(t => t.type === 'deposit').slice(-1)[0]?.amount || '0.00'}</p>
               </div>
             </div>
           </section>
@@ -346,54 +352,59 @@ const ResellerDashboard = () => {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-light text-foreground">Top Compradores</h2>
-              <p className="text-sm text-muted-foreground mt-1">Os maiores investidores da plataforma</p>
+              <h2 className="text-2xl font-semibold text-white tracking-tight">Top Compradores</h2>
+              <p className="text-sm text-neutral-400 mt-1 font-light">Os maiores investidores da plataforma</p>
             </div>
             {/* Filtros Rápidos */}
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 text-xs font-medium text-foreground bg-primary/10 rounded-md border border-primary/20">
+            <div className="flex items-center gap-2 bg-[#0A0A0A] p-1 rounded-xl border border-white/5">
+              <button className="px-4 py-1.5 text-xs font-medium text-white bg-white/10 rounded-lg border border-white/10 shadow-sm transition-all">
                 Geral
               </button>
-              <button className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 rounded-md transition-colors">
+              <button className="px-4 py-1.5 text-xs font-medium text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                 Mensal
               </button>
-              <button className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/5 rounded-md transition-colors">
+              <button className="px-4 py-1.5 text-xs font-medium text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                 Semanal
               </button>
             </div>
           </div>
-          <div className="rounded-3xl border border-border bg-[#050505] p-6">
-            <div className="grid grid-cols-1 gap-3">
+          <div className="rounded-[2rem] border border-white/5 bg-[#050505] p-2 md:p-4">
+            <div className="flex flex-col gap-2">
               {[
-                { position: 1, name: 'Leonardo', credits: 7490, badge: 'bg-amber-500' },
-                { position: 2, name: 'Luis Fernando', credits: 5500, badge: 'bg-slate-400' },
-                { position: 3, name: 'Jorge', credits: 5000, badge: 'bg-orange-600' }
+                { position: 1, name: 'Leonardo', credits: 7490, badge: 'bg-gradient-to-br from-amber-400 to-orange-600', color: 'text-amber-500' },
+                { position: 2, name: 'Luis Fernando', credits: 5500, badge: 'bg-gradient-to-br from-slate-300 to-slate-500', color: 'text-slate-400' },
+                { position: 3, name: 'Jorge', credits: 5000, badge: 'bg-gradient-to-br from-orange-500 to-red-600', color: 'text-orange-500' }
               ].map((buyer) => (
-                <div key={buyer.position} className="flex items-center justify-between p-5 rounded-2xl bg-[#0A0A0A] hover:bg-[#0F0F0F] transition-colors border border-border/50">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 rounded-full ${buyer.badge} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                <div key={buyer.position} className="group flex items-center justify-between p-4 md:p-6 rounded-[1.5rem] bg-[#0A0A0A] hover:bg-[#111] transition-all duration-300 border border-transparent hover:border-white/5">
+                  <div className="flex items-center gap-4 md:gap-6">
+                    {/* Position Badge */}
+                    <div className={`h-10 w-10 md:h-12 md:w-12 rounded-full ${buyer.badge} flex items-center justify-center text-white font-bold text-sm md:text-base flex-shrink-0 shadow-lg`}>
                       #{buyer.position}
                     </div>
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-white font-mono font-bold text-sm border border-slate-700 flex-shrink-0">
+                    
+                    {/* User Avatar */}
+                    <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gradient-to-b from-neutral-800 to-neutral-950 flex items-center justify-center text-white font-mono font-medium text-xs md:text-sm border border-white/10 flex-shrink-0 group-hover:border-white/20 transition-colors">
                       {buyer.name.substring(0, 2).toUpperCase()}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground">{buyer.name}</p>
-                          {buyer.credits >= 5000 && (
-                            <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          )}
-                        </div>
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground/60">Membro ativo</p>
+                    
+                    {/* User Info */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="font-semibold text-white text-base md:text-lg tracking-tight">{buyer.name}</p>
+                        <svg className="h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       </div>
+                      <p className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-neutral-500 font-medium">Membro ativo</p>
                     </div>
                   </div>
+                  
+                  {/* Credits */}
                   <div className="text-right flex-shrink-0">
-                    <p className="text-2xl font-light text-foreground">{buyer.credits.toLocaleString('pt-BR')}</p>
-                    <p className="text-xs text-muted-foreground">créditos</p>
+                    <p className="text-xl md:text-3xl font-light text-white tracking-tighter">
+                      {buyer.credits.toLocaleString('pt-BR')}
+                    </p>
+                    <p className="text-[10px] md:text-xs text-neutral-500 font-medium">créditos</p>
                   </div>
                 </div>
               ))}
@@ -402,7 +413,7 @@ const ResellerDashboard = () => {
         </section>
 
         {/* Networking Group CTA */}
-        <section className="relative overflow-hidden rounded-md border border-border bg-[#0A0A0A] p-10">
+        <section className="relative overflow-hidden rounded-md border border-border bg-[#0A0A0A] p-10 hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
           
           <div className="relative z-10 max-w-3xl mx-auto text-center space-y-8">
@@ -461,61 +472,50 @@ const ResellerDashboard = () => {
         </section>
 
         {/* Quick Actions - Minimalista */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
             onClick={() => navigate('/academy')}
-            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-primary/40 transition-all"
+            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6 cursor-pointer hover:bg-white/[0.04] transition-all hover:-translate-y-1"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
+            <div className="flex flex-col gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-white text-white group-hover:text-black transition-colors">
+                <BookOpen className="h-5 w-5" />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Academy</h3>
-            <p className="text-sm text-muted-foreground font-medium">Aprenda estratégias para escalar sua revenda</p>
-          </div>
-
-          <div
-            onClick={() => navigate('/licencas')}
-            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-accent/40 transition-all"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-md bg-accent/10 flex items-center justify-center">
-                <Key className="h-6 w-6 text-accent" strokeWidth={1.5} />
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-1">Academy</h3>
+                <p className="text-xs text-neutral-400 font-medium">Aprenda a usar seus créditos</p>
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Licenças Lovable</h3>
-            <p className="text-sm text-muted-foreground font-medium">Gere e gerencie licenças da extensão</p>
           </div>
 
           <div
             onClick={() => navigate('/pedidos')}
-            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-blue-500/40 transition-all"
+            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6 cursor-pointer hover:bg-white/[0.04] transition-all hover:-translate-y-1"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-md bg-blue-500/10 flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-blue-500" strokeWidth={1.5} />
+            <div className="flex flex-col gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-white text-white group-hover:text-black transition-colors">
+                <Receipt className="h-5 w-5" />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-500 group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-1">Meus Pedidos</h3>
+                <p className="text-xs text-neutral-400 font-medium">Histórico e status</p>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Meus Pedidos</h3>
-            <p className="text-sm text-muted-foreground font-medium">Acompanhe o status dos seus pedidos</p>
           </div>
 
           <div
             onClick={() => navigate('/ajuda')}
-            className="group relative overflow-hidden rounded-md border border-border bg-card p-8 cursor-pointer hover:border-orange-500/40 transition-all"
+            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6 cursor-pointer hover:bg-white/[0.04] transition-all hover:-translate-y-1"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-md bg-orange-500/10 flex items-center justify-center">
-                <Gift className="h-6 w-6 text-orange-500" strokeWidth={1.5} />
+            <div className="flex flex-col gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-white text-white group-hover:text-black transition-colors">
+                <Headphones className="h-5 w-5" />
               </div>
-              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-orange-500 group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-1">Suporte</h3>
+                <p className="text-xs text-neutral-400 font-medium">Central de ajuda</p>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2" style={{ letterSpacing: '-0.02em' }}>Central de Ajuda</h3>
-            <p className="text-sm text-muted-foreground font-medium">Tire suas dúvidas e fale com o suporte</p>
           </div>
         </section>
 

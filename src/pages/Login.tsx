@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Zap, Shield, Headphones, CheckCircle2 } from 'lucide-react';
+import { Zap, Shield, Headphones, CheckCircle2, ArrowRight, Instagram, Youtube, Users, Star, Play } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,6 +21,15 @@ const Login = () => {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  const proofImages = [
+    { src: '/testimonials/t1.jpeg', alt: 'Comprovante 1' },
+    { src: '/testimonials/t2.jpeg', alt: 'Comprovante 2' },
+    { src: '/testimonials/t3.jpeg', alt: 'Comprovante 3' },
+    { src: '/testimonials/t4.jpeg', alt: 'Comprovante 4' },
+    { src: '/testimonials/t5.jpeg', alt: 'Comprovante 5' },
+    { src: '/testimonials/t6.jpeg', alt: 'Comprovante 6' }
+  ];
 
   const testimonials = [
     {
@@ -53,431 +60,369 @@ const Login = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-white/30">
+      {/* Background effects */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/[0.03] via-black to-black" />
+        <div className="absolute top-0 w-full h-[500px] bg-gradient-to-b from-white/[0.02] to-transparent" />
+      </div>
+
       {/* Sticky Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-black/80 backdrop-blur-lg border-b border-slate-900/50' : 'bg-transparent'
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled ? 'bg-black/60 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'
       }`}>
         <div className="container mx-auto max-w-7xl px-6">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between">
             {/* Logo */}
             <button 
               onClick={() => scrollToSection('hero')}
-              className="text-lg font-medium text-white hover:text-slate-300 transition-colors"
+              className="text-xl font-bold tracking-tighter text-white hover:opacity-80 transition-opacity"
             >
-              Top Créditos
+              Top Créditos.
             </button>
 
             {/* Navigation Links */}
-            <div className="hidden md:flex items-center gap-8">
-              <button
-                onClick={() => scrollToSection('hero')}
-                className="text-sm text-slate-400 hover:text-white transition-colors"
-              >
-                Início
-              </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-sm text-slate-400 hover:text-white transition-colors"
-              >
-                Pacotes
-              </button>
-              <button
-                onClick={() => scrollToSection('leaderboard')}
-                className="text-sm text-slate-400 hover:text-white transition-colors"
-              >
-                Leaderboard
-              </button>
-              <button
-                onClick={() => navigate('/ajuda')}
-                className="text-sm text-slate-400 hover:text-white transition-colors"
-              >
-                Suporte
-              </button>
+            <div className="hidden md:flex items-center gap-10">
+              {['Início', 'Pacotes', 'Leaderboard', 'Suporte'].map((item) => (
+                <button
+                  key={item}
+                  onClick={() => item === 'Pacotes' ? navigate('/dashboard') : item === 'Suporte' ? navigate('/ajuda') : scrollToSection(item.toLowerCase())}
+                  className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+                >
+                  {item}
+                </button>
+              ))}
             </div>
 
             {/* CTA Button */}
-            <Button
+            <button
               onClick={() => navigate('/dashboard')}
-              variant="ghost"
-              className="text-sm text-slate-400 hover:text-white hover:bg-slate-900/50"
+              className="text-sm font-semibold text-white px-5 py-2.5 rounded-full bg-white/10 hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md"
             >
               Minha Conta
-            </Button>
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Subtle Background */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-black to-black" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-slate-800/10 rounded-full blur-[150px]" />
-      </div>
-
-      {/* Hero Section */}
-      <section id="hero" className="relative px-6 pt-32 pb-48">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-8">
-            <div className="inline-block px-4 py-2 rounded-full bg-slate-900/50 border border-slate-800 mb-4">
-              <p className="text-sm text-slate-400">Créditos Lovable Oficiais</p>
+      <main className="relative z-10">
+        {/* Hero Section */}
+        <section id="hero" className="relative px-6 pt-40 pb-32 md:pt-52 md:pb-40 flex flex-col items-center justify-center text-center min-h-[90vh]">
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out flex flex-col items-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs font-medium text-neutral-300 tracking-wide uppercase">Créditos Lovable Oficiais</span>
             </div>
             
-            <h1 className="text-7xl md:text-8xl font-light tracking-tight text-white">
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 mb-8 pb-2">
               Top Créditos
             </h1>
             
-            <p className="text-xl md:text-2xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed">
-              Compre créditos Lovable com entrega instantânea.<br />
-              A forma mais rápida e segura de adquirir seus créditos.
+            <p className="text-lg md:text-2xl text-neutral-400 font-light max-w-2xl mx-auto leading-relaxed mb-12">
+              A forma mais minimalista e segura de adquirir seus créditos. <br className="hidden md:block" />
+              Entrega instantânea na sua conta.
             </p>
 
-            <div className="pt-8">
-              <Button
-                size="lg"
-                onClick={() => navigate('/dashboard')}
-                className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
-              >
-                Ver Pacotes de Créditos
-              </Button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="group relative inline-flex items-center justify-center gap-3 h-14 px-10 text-base font-semibold bg-white text-black rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
+            >
+              <span className="relative z-10">Ver Pacotes de Créditos</span>
+              <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
+              <div className="absolute inset-0 bg-neutral-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
+            </button>
+
+            <p className="text-sm text-neutral-600 mt-8 font-medium">
+              Mais de 500 créditos vendidos hoje
+            </p>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="pacotes" className="relative px-6 py-32 border-t border-white/5 bg-gradient-to-b from-black to-neutral-950">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-24">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
+                A melhor experiência
+              </h2>
+              <p className="text-xl text-neutral-400 font-light">
+                Por que escolher a Top Créditos?
+              </p>
             </div>
-
-            <p className="text-sm text-slate-600 pt-4">
-              Mais de 500 créditos Lovable vendidos nas últimas 24 horas
-            </p>
+            
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { icon: Zap, title: 'Instantâneo', desc: 'Créditos na sua conta em segundos após o pagamento.' },
+                { icon: Shield, title: '100% Seguro', desc: 'Criptografia de nível bancário em todas as transações.' },
+                { icon: Headphones, title: 'Suporte 24/7', desc: 'Atendimento premium e especializado sempre disponível.' },
+                { icon: CheckCircle2, title: 'Garantia Total', desc: 'Satisfação garantida ou seu dinheiro de volta integralmente.' }
+              ].map((feature, idx) => (
+                <div key={idx} className="group p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-all duration-500 hover:-translate-y-2">
+                  <div className="w-14 h-14 mb-8 rounded-2xl bg-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-white text-white group-hover:text-black transition-all duration-500">
+                    <feature.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3 tracking-tight">{feature.title}</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">
+                    {feature.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Value Proposition */}
-      <section className="relative px-6 py-32">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center space-y-6">
-            <h2 className="text-4xl md:text-5xl font-light text-white">
-              Créditos Lovable direto na sua conta
-            </h2>
-            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-              Escolha seu pacote, efetue o pagamento e receba seus créditos Lovable automaticamente em segundos. Simples, rápido e seguro.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="pacotes" className="relative px-6 py-32 border-y border-slate-900">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-light text-white mb-4">
-              Por que comprar créditos Lovable aqui?
-            </h2>
-            <p className="text-lg text-slate-400">
-              A melhor experiência de compra de créditos Lovable
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-4 gap-12">
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-medium text-white">Entrega Instantânea</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Créditos Lovable na sua conta em segundos após o pagamento
+        {/* Testimonials & Proofs */}
+        <section id="leaderboard" className="relative px-6 py-32 border-t border-white/5 bg-gradient-to-b from-neutral-950 to-black overflow-hidden">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-20 relative z-10">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
+                A Prova Social
+              </h2>
+              <p className="text-xl text-neutral-400 font-light">
+                Quem usa, aprova. Veja os últimos comprovantes reais da nossa comunidade.
               </p>
             </div>
 
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-medium text-white">100% Seguro</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Transações protegidas com criptografia de nível bancário
-              </p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
-                <Headphones className="w-5 h-5 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-medium text-white">Suporte 24/7</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Atendimento especializado para suas compras de créditos
-              </p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-slate-400" />
-              </div>
-              <h3 className="text-lg font-medium text-white">Garantia Total</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Seus créditos Lovable garantidos ou seu dinheiro de volta
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials - Provas Sociais */}
-      <section id="leaderboard" className="relative px-6 py-32">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-light text-white mb-4">
-              Provas Reais
-            </h2>
-            <p className="text-lg text-slate-400">
-              Veja depoimentos reais de clientes que compraram créditos Lovable conosco
-            </p>
-          </div>
-
-          {/* Galeria de Provas Sociais */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {[1, 2, 3, 4, 5, 6].map((num) => (
-              <div 
-                key={num}
-                className="relative aspect-square rounded-2xl overflow-hidden bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all duration-300 group cursor-pointer"
-              >
-                <img 
-                  src={`/testimonials/t${num}.jpeg`}
-                  alt={`Depoimento ${num}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    // Fallback se a imagem não existir
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement!.innerHTML = `
-                      <div class="flex items-center justify-center h-full p-6">
-                        <p class="text-slate-400 text-sm text-center">Depoimento ${num}</p>
-                      </div>
-                    `;
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            ))}
-          </div>
-
-          {/* Depoimento em Destaque */}
-          <Card className="p-12 bg-slate-950/50 backdrop-blur-sm border-slate-900">
-            <div className="text-center space-y-8">
-              <p className="text-xl md:text-2xl text-slate-300 font-light leading-relaxed">
-                "{testimonials[testimonialIndex].text}"
-              </p>
-
-              <div className="pt-6">
-                <p className="text-base font-medium text-white">{testimonials[testimonialIndex].name}</p>
-                <p className="text-sm text-slate-500">{testimonials[testimonialIndex].role}, {testimonials[testimonialIndex].company}</p>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 pt-4">
-                {testimonials.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setTestimonialIndex(i)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      i === testimonialIndex
-                        ? 'bg-white w-8'
-                        : 'bg-slate-800 w-1.5 hover:bg-slate-700'
-                    }`}
+            {/* Gamified Proofs Gallery */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative z-10">
+              {proofImages.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  className={`group relative aspect-[3/4] rounded-2xl overflow-hidden bg-white/5 border border-white/10 transition-all duration-500 hover:z-20 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] ${
+                    idx % 2 === 0 ? 'translate-y-4 md:translate-y-8' : '-translate-y-4 md:-translate-y-8'
+                  }`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <img 
+                    src={img.src} 
+                    alt={img.alt} 
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110 filter saturate-[0.8] group-hover:saturate-100"
                   />
+                  <div className="absolute bottom-4 left-4 right-4 z-20 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-white bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full w-fit">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                      Entrega Confirmada
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Creator Identity / Trust Section */}
+        <section className="relative px-6 py-32 border-t border-white/5 bg-black overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-white/[0.01] rounded-full blur-3xl pointer-events-none" />
+
+          <div className="container mx-auto max-w-6xl relative z-10">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              
+              {/* Creator Info */}
+              <div className="space-y-8 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2">
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-xs font-semibold text-neutral-300 tracking-wide uppercase">Fundador & Desenvolvedor</span>
+                </div>
+                
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white">
+                  Quem está por trás da <br className="hidden lg:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-500">Top Créditos?</span>
+                </h2>
+                
+                <p className="text-lg text-neutral-400 font-light leading-relaxed max-w-xl mx-auto lg:mx-0">
+                  Sou o <strong className="text-white font-medium">Felipe Top</strong>, especialista em Inteligência Artificial e automações. 
+                  Construo soluções que otimizam o seu tempo e elevo a sua operação para outro nível. 
+                  A Top Créditos nasceu para resolver um problema real com eficiência e transparência.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center gap-6 pt-4 justify-center lg:justify-start">
+                  {/* YouTube Metric */}
+                  <a href="https://youtube.com/@realfelipetop" target="_blank" rel="noopener noreferrer" 
+                    className="group flex items-center gap-4 p-4 pr-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] transition-all duration-300 w-full sm:w-auto">
+                    <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                      <Youtube className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xl font-bold text-white tracking-tight">2.2K+</p>
+                      <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Inscritos no YouTube</p>
+                    </div>
+                  </a>
+
+                  {/* Instagram Metric */}
+                  <a href="https://instagram.com/realfelipetop" target="_blank" rel="noopener noreferrer" 
+                    className="group flex items-center gap-4 p-4 pr-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] transition-all duration-300 w-full sm:w-auto">
+                    <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform">
+                      <Instagram className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xl font-bold text-white tracking-tight">19.9K+</p>
+                      <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Seguidores no Insta</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              {/* Creator Visual Showcase */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-neutral-900 to-transparent rounded-[3rem] -rotate-3 scale-[1.02] border border-white/5" />
+                <div className="relative bg-neutral-950 border border-white/10 p-2 rounded-[3rem] overflow-hidden shadow-2xl">
+                  
+                  {/* Social Profile Mockup */}
+                  <div className="bg-black rounded-[2.5rem] p-8 border border-white/5">
+                    <div className="flex items-center gap-6 mb-8">
+                      <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-500">
+                        <div className="w-full h-full rounded-full border-4 border-black overflow-hidden relative">
+                           <img 
+                             src="/felipe-avatar.jpeg" 
+                             alt="Felipe Top" 
+                             className="w-full h-full object-cover"
+                           />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-xl font-bold text-white">realfelipetop</h3>
+                          <CheckCircle2 className="w-4 h-4 text-blue-400 fill-blue-400" />
+                        </div>
+                        <p className="text-sm text-neutral-400 font-medium mb-3">Felipe Top 🔝</p>
+                        <div className="flex gap-4 text-sm">
+                          <span className="text-neutral-300"><strong className="text-white">45</strong> publ</span>
+                          <span className="text-neutral-300"><strong className="text-white">19,9 mil</strong> seg</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-neutral-300 leading-relaxed mb-6 font-light">
+                      Dev & Fundador <span className="text-blue-400 hover:underline cursor-pointer">@forfy.ai</span><br/>
+                      Expert em I.A e automações<br/>
+                      Aqui eu mostro os bastidores da minha startup
+                    </p>
+
+                    {/* Content Preview Grid */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="aspect-square bg-neutral-900 rounded-xl overflow-hidden relative group cursor-pointer border border-white/5">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                      <div className="aspect-square bg-neutral-800 rounded-xl overflow-hidden relative group cursor-pointer border border-white/5">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                      <div className="aspect-square bg-neutral-900 rounded-xl overflow-hidden relative group cursor-pointer border border-white/5">
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="relative px-6 py-40 border-t border-white/5 overflow-hidden">
+          {/* Background glow for CTA */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-white/[0.03] rounded-full blur-[100px] pointer-events-none" />
+          
+          <div className="relative z-10 container mx-auto max-w-3xl text-center">
+            <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8">
+              Pronto para evoluir?
+            </h2>
+            <p className="text-xl text-neutral-400 mb-14 font-light max-w-xl mx-auto">
+              Adquira seus créditos agora e tenha acesso imediato a todos os recursos.
+            </p>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center justify-center h-16 px-12 text-lg font-semibold bg-white text-black rounded-full hover:scale-105 transition-transform duration-300 shadow-[0_0_40px_rgba(255,255,255,0.2)]"
+            >
+              Comprar Créditos Agora
+            </button>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative px-6 py-20 border-t border-white/10 bg-neutral-950">
+        <div className="container mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8 mb-16">
+            {/* Brand Column */}
+            <div className="md:col-span-5 pr-8">
+              <h3 className="text-2xl font-bold tracking-tighter text-white mb-6">Top Créditos.</h3>
+              <p className="text-neutral-400 font-light leading-relaxed mb-8 max-w-sm">
+                A experiência mais premium e minimalista para compra de créditos Lovable do Brasil. Rápido, seguro e focado em você.
+              </p>
+              <div className="flex items-center gap-4">
+                {[
+                  { icon: <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, url: "https://youtube.com/@realfelipetop" },
+                  { icon: <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>, url: "https://instagram.com/realfelipetop" }
+                ].map((social, idx) => (
+                  <a 
+                    key={idx}
+                    href={social.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+                  >
+                    {social.icon}
+                  </a>
                 ))}
               </div>
             </div>
-          </Card>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="relative px-6 py-32 border-t border-slate-900">
-        <div className="container mx-auto max-w-3xl text-center">
-          <h2 className="text-4xl md:text-5xl font-light text-white mb-6">
-            Pronto para comprar seus créditos Lovable?
-          </h2>
-          <p className="text-lg text-slate-400 mb-12">
-            Escolha seu pacote e receba seus créditos instantaneamente. Processo simples e 100% seguro.
-          </p>
-          <Button
-            size="lg"
-            onClick={() => navigate('/dashboard')}
-            className="h-14 px-10 text-base font-medium bg-white text-black hover:bg-slate-200 rounded-full transition-all duration-300"
-          >
-            Comprar Créditos Agora
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative px-6 py-16 border-t border-slate-900">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            {/* Brand Column */}
-            <div className="md:col-span-1">
-              <h3 className="text-xl font-medium text-white mb-4">Top Créditos</h3>
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                Créditos Lovable pelo menor preço do Brasil. Entrega rápida, cashback e suporte 24h.
-              </p>
-              <div className="flex items-center gap-3">
-                <a 
-                  href="https://youtube.com/@topcreditos" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="h-10 w-10 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-                >
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                </a>
-                <a 
-                  href="https://instagram.com/topcreditos" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="h-10 w-10 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-                >
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                  </svg>
-                </a>
-                <a 
-                  href="https://wa.me/5511999999999" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="h-10 w-10 rounded-full bg-slate-900 hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-                >
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-
-            {/* Platform Column */}
-            <div>
-              <h4 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Plataforma</h4>
-              <ul className="space-y-3">
-                <li>
-                  <button 
-                    onClick={() => navigate('/dashboard')}
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    Comprar Créditos
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/pedidos')}
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    Meus Pedidos
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/licencas')}
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    Licenças
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => scrollToSection('leaderboard')}
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    Ranking
-                  </button>
-                </li>
+            {/* Links Columns */}
+            <div className="md:col-span-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Plataforma</h4>
+              <ul className="space-y-4">
+                {['Comprar Créditos', 'Meus Pedidos', 'Licenças', 'Ranking'].map((link) => (
+                  <li key={link}>
+                    <button onClick={() => navigate('/dashboard')} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium">
+                      {link}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Support Column */}
-            <div>
-              <h4 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Suporte</h4>
-              <ul className="space-y-3">
-                <li>
-                  <a 
-                    href="https://wa.me/5511999999999" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    WhatsApp
-                  </a>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/ajuda')}
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    Central de Ajuda
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/academy')}
-                    className="text-sm text-slate-400 hover:text-white transition-colors"
-                  >
-                    Academy
-                  </button>
-                </li>
+            <div className="md:col-span-2">
+              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Suporte</h4>
+              <ul className="space-y-4">
+                {['WhatsApp', 'Central de Ajuda', 'Academy'].map((link) => (
+                  <li key={link}>
+                    <button onClick={() => navigate('/ajuda')} className="text-neutral-400 hover:text-white transition-colors text-sm font-medium">
+                      {link}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Contact Column */}
-            <div>
-              <h4 className="text-sm font-medium text-white uppercase tracking-wider mb-4">Contato</h4>
-              <ul className="space-y-3">
-                <li className="text-sm text-slate-400">
-                  <a 
-                    href="mailto:contato@topcreditos.com.br"
-                    className="hover:text-white transition-colors"
-                  >
-                    contato@topcreditos.com.br
-                  </a>
-                </li>
-                <li className="text-sm text-slate-400">
-                  <a 
-                    href="https://wa.me/5511999999999"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-white transition-colors"
-                  >
-                    +55 (11) 99999-9999
-                  </a>
-                </li>
-                <li className="text-sm text-slate-400">
-                  Atendimento 24/7
-                </li>
+            <div className="md:col-span-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-6">Contato</h4>
+              <ul className="space-y-4">
+                <li><a href="mailto:contato@topcreditos.com.br" className="text-neutral-400 hover:text-white transition-colors text-sm font-medium">contato@topcreditos.com.br</a></li>
+                <li><a href="https://wa.me/5511999999999" className="text-neutral-400 hover:text-white transition-colors text-sm font-medium">+55 (11) 99999-9999</a></li>
+                <li className="text-neutral-500 text-sm font-medium">Atendimento 24/7</li>
               </ul>
             </div>
           </div>
 
-          {/* Bottom Bar */}
-          <div className="pt-8 border-t border-slate-900">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <p className="text-xs text-slate-600 text-center md:text-left">
-                © 2024 Top Créditos. Todos os direitos reservados.
-              </p>
-              <div className="flex items-center gap-6 text-xs text-slate-600">
-                <button 
-                  onClick={() => navigate('/termos')}
-                  className="hover:text-slate-400 transition-colors"
-                >
-                  Termos de Uso
+          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-neutral-500 text-sm font-medium text-center md:text-left">
+              © {new Date().getFullYear()} Top Créditos. Todos os direitos reservados.
+            </p>
+            <div className="flex items-center gap-8 text-sm font-medium text-neutral-500">
+              {['Termos de Uso', 'Privacidade', 'Cookies'].map((link) => (
+                <button key={link} onClick={() => navigate('/termos')} className="hover:text-white transition-colors">
+                  {link}
                 </button>
-                <span>•</span>
-                <button 
-                  onClick={() => navigate('/privacidade')}
-                  className="hover:text-slate-400 transition-colors"
-                >
-                  Privacidade
-                </button>
-                <span>•</span>
-                <button 
-                  onClick={() => navigate('/cookies')}
-                  className="hover:text-slate-400 transition-colors"
-                >
-                  Cookies
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         </div>
