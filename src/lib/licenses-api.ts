@@ -176,10 +176,46 @@ export const licensesAPI = {
 
   // Generate commercial license
   async generateLicense(data: GenerateLicenseRequest): Promise<GenerateLicenseResponse> {
-    return fetchAPI('/reseller-api/licenses/generate', {
+    // Primeiro, gera a licença na API externa
+    const response = await fetchAPI('/reseller-api/licenses/generate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+
+    // Se gerou com sucesso, debita do saldo local
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      // Mapear token_cost para preço em R$
+      const PLAN_PRICES: Record<number, number> = {
+        3: 39.90,  // 1 dia
+        4: 97.90   // 7 dias
+      };
+
+      const priceInReais = PLAN_PRICES[response.token_cost] || (response.token_cost * 5);
+
+      // Debitar do saldo
+      const { data: paymentResult, error: paymentError } = await supabase.rpc('debit_license_payment', {
+        p_user_id: user.id,
+        p_amount: priceInReais,
+        p_plan_name: response.plan,
+        p_license_key: response.key
+      });
+
+      if (paymentError) {
+        console.error('Erro ao debitar pagamento:', paymentError);
+        throw new Error('Licença gerada mas erro ao processar pagamento. Entre em contato com o suporte.');
+      }
+
+      console.log('Pagamento processado:', paymentResult);
+    } catch (error: any) {
+      console.error('Erro no processamento do pagamento:', error);
+      // Licença já foi gerada, então não vamos bloquear o fluxo
+      // mas vamos logar o erro
+    }
+
+    return response;
   },
 
   // Generate trial license

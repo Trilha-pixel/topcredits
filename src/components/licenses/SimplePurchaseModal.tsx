@@ -32,14 +32,14 @@ const PLAN_PRICES: Record<number, number> = {
 interface SimplePurchaseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  balance: number;
+  walletBalance: number; // Saldo em R$ da carteira
   onSuccess: () => void;
 }
 
 const SimplePurchaseModal: React.FC<SimplePurchaseModalProps> = ({
   open,
   onOpenChange,
-  balance,
+  walletBalance,
   onSuccess
 }) => {
   const [plans, setPlans] = useState<DisplayPlan[]>([]);
@@ -105,14 +105,14 @@ const SimplePurchaseModal: React.FC<SimplePurchaseModalProps> = ({
 
     setLoading(true);
     try {
-      // Verifica saldo
-      if (balance < selectedPlan.tokenCost) {
-        toast.error(`Saldo insuficiente. Você precisa de ${selectedPlan.tokenCost} tokens.`);
+      // Verifica saldo em R$
+      if (walletBalance < selectedPlan.price) {
+        toast.error(`Saldo insuficiente. Você precisa de R$ ${selectedPlan.price.toFixed(2)} mas tem apenas R$ ${walletBalance.toFixed(2)}.`);
         setLoading(false);
         return;
       }
 
-      // Gera a licença
+      // Gera a licença (a API vai debitar do saldo)
       const response = await licensesAPI.generateLicense({
         plan_id: selectedPlan.id,
         client_name: clientName.trim(),
@@ -151,11 +151,11 @@ const SimplePurchaseModal: React.FC<SimplePurchaseModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
-          {/* Saldo - Oculto para B2C */}
+          {/* Saldo em R$ */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Saldo Disponível:</span>
-              <span className="text-xl font-bold text-primary">{balance} tokens</span>
+              <span className="text-xl font-bold text-primary">R$ {walletBalance.toFixed(2)}</span>
             </div>
           </div>
 
@@ -198,9 +198,6 @@ const SimplePurchaseModal: React.FC<SimplePurchaseModalProps> = ({
                         R$ {plan.price.toFixed(2)}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {plan.tokenCost} tokens
-                    </p>
                   </div>
 
                   <ul className="space-y-2">
@@ -252,20 +249,20 @@ const SimplePurchaseModal: React.FC<SimplePurchaseModalProps> = ({
               </div>
 
               <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold text-sm mb-2">Resumo</h4>
+                <h4 className="font-semibold text-sm mb-2">Resumo da Compra</h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Plano:</span>
                     <span className="font-medium">{selectedPlan.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Custo:</span>
-                    <span className="font-medium">{selectedPlan.tokenCost} tokens</span>
+                    <span className="text-muted-foreground">Valor:</span>
+                    <span className="font-medium">R$ {selectedPlan.price.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t">
-                    <span className="text-muted-foreground">Saldo após:</span>
-                    <span className={`font-bold ${balance >= selectedPlan.tokenCost ? 'text-green-500' : 'text-red-500'}`}>
-                      {balance - selectedPlan.tokenCost} tokens
+                    <span className="text-muted-foreground">Saldo após compra:</span>
+                    <span className={`font-bold ${walletBalance >= selectedPlan.price ? 'text-green-500' : 'text-red-500'}`}>
+                      R$ {(walletBalance - selectedPlan.price).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -273,15 +270,15 @@ const SimplePurchaseModal: React.FC<SimplePurchaseModalProps> = ({
 
               <Button
                 onClick={handlePurchase}
-                disabled={loading || balance < selectedPlan.tokenCost}
+                disabled={loading || walletBalance < selectedPlan.price}
                 className="w-full h-11"
               >
-                {loading ? 'Gerando...' : 'Gerar Licença Agora'}
+                {loading ? 'Gerando...' : `Comprar por R$ ${selectedPlan.price.toFixed(2)}`}
               </Button>
 
-              {balance < selectedPlan.tokenCost && (
+              {walletBalance < selectedPlan.price && (
                 <p className="text-sm text-red-500 text-center">
-                  Saldo insuficiente. Compre mais tokens.
+                  Saldo insuficiente. Faça um depósito para continuar.
                 </p>
               )}
             </div>

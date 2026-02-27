@@ -21,7 +21,7 @@ const Licencas = () => {
 
   const [licenses, setLicenses] = useState<License[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [balance, setBalance] = useState<number>(0);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [resellerName, setResellerName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -31,8 +31,6 @@ const Licencas = () => {
   
   const [generateModal, setGenerateModal] = useState(false);
   const [trialModal, setTrialModal] = useState(false);
-  const [buyTokensModal, setBuyTokensModal] = useState(false);
-  const [tokensToBuy, setTokensToBuy] = useState<number>(10);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [total, setTotal] = useState(0);
@@ -54,8 +52,7 @@ const Licencas = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [balanceData, plansData, licensesData] = await Promise.all([
-        licensesAPI.getBalance(),
+      const [plansData, licensesData, walletData] = await Promise.all([
         licensesAPI.getPlans(),
         licensesAPI.getLicenses({
           status: statusFilter || undefined,
@@ -63,10 +60,23 @@ const Licencas = () => {
           limit,
           offset,
         }),
+        // Buscar saldo da carteira
+        supabase
+          .from('wallets')
+          .select('balance')
+          .eq('user_id', user?.id)
+          .single()
       ]);
 
-      setBalance(balanceData.token_balance);
-      setResellerName(balanceData.reseller);
+      // Buscar nome do perfil
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user?.id)
+        .single();
+
+      setWalletBalance(Number(walletData.data?.balance || 0));
+      setResellerName(profileData?.full_name || 'Cliente');
       setPlans(plansData.plans);
       setLicenses(licensesData.licenses);
       setTotal(licensesData.total);
@@ -147,62 +157,6 @@ const Licencas = () => {
     } catch (error: any) {
       console.error('Erro ao desbloquear:', error);
       toast.error(getLicenseErrorMessage(error, 'unblock'));
-    }
-  };
-
-  const handleBuyTokens = async () => {
-    if (!user?.id || tokensToBuy < 1) {
-      toast.error('Quantidade inválida. Informe quantos tokens deseja comprar.');
-      return;
-    }
-
-    const totalCost = tokensToBuy * 5; // R$ 5 por token
-
-    setIsLoading(true);
-    try {
-      // Verificar saldo atual
-      const { data: walletData, error: walletError } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', user.id)
-        .single();
-
-      if (walletError) throw walletError;
-
-      const currentBalance = Number(walletData.balance);
-
-      if (currentBalance < totalCost) {
-        toast.error(
-          `Saldo insuficiente! Você precisa de R$ ${totalCost.toFixed(2)} mas tem apenas R$ ${currentBalance.toFixed(2)}. Faça um depósito primeiro.`,
-          { duration: 5000 }
-        );
-        setBuyTokensModal(false);
-        // Redirecionar para depósito
-        navigate('/dashboard');
-        setTimeout(() => {
-          toast.info('Clique em "Depositar" para adicionar saldo à sua conta');
-        }, 500);
-        return;
-      }
-
-      // Debitar do saldo e adicionar tokens
-      const { error: debitError } = await supabase.rpc('purchase_tokens', {
-        p_user_id: user.id,
-        p_tokens_amount: tokensToBuy,
-        p_total_cost: totalCost
-      });
-
-      if (debitError) throw debitError;
-
-      toast.success(`${tokensToBuy} tokens comprados com sucesso por R$ ${totalCost.toFixed(2)}!`);
-      setBuyTokensModal(false);
-      setTokensToBuy(10);
-      loadData();
-    } catch (error: any) {
-      console.error('Erro ao comprar tokens:', error);
-      toast.error(getTokenErrorMessage(error, 'buy'), { duration: 5000 });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -456,18 +410,18 @@ const Licencas = () => {
             <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saldo Tokens</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Saldo Disponível</p>
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
-              <p className="text-4xl font-bold text-primary mb-4">{balance}</p>
+              <p className="text-4xl font-bold text-primary mb-4">R$ {walletBalance.toFixed(2)}</p>
               <Button 
-                onClick={() => setBuyTokensModal(true)} 
+                onClick={() => navigate('/dashboard')} 
                 size="sm" 
                 variant="outline" 
                 className="w-full border-primary/30 hover:bg-primary/10 text-primary hover:text-primary"
               >
-                <Coins className="h-3.5 w-3.5 mr-2" />
-                Comprar Tokens
+                <DollarSign className="h-3.5 w-3.5 mr-2" />
+                Adicionar Saldo
               </Button>
             </div>
           </div>
@@ -687,7 +641,7 @@ const Licencas = () => {
       <SimplePurchaseModal
         open={generateModal}
         onOpenChange={setGenerateModal}
-        balance={balance}
+        walletBalance={walletBalance}
         onSuccess={handleGenerateSuccess}
       />
 
@@ -711,68 +665,6 @@ const Licencas = () => {
             <Button onClick={handleGenerateTrialLicense} disabled={isLoading} className="bg-primary hover:bg-primary/90">
               <Gift className="h-4 w-4 mr-2" />
               Gerar Teste
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Buy Tokens Modal */}
-      <Dialog open={buyTokensModal} onOpenChange={setBuyTokensModal}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-primary">
-              <Coins className="h-5 w-5" />
-              Comprar Tokens
-            </DialogTitle>
-            <DialogDescription>
-              Cada token custa R$ 5,00 e será debitado do seu saldo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Quantidade de Tokens</Label>
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                value={tokensToBuy}
-                onChange={(e) => setTokensToBuy(Math.max(1, parseInt(e.target.value) || 1))}
-                className="bg-secondary border-border"
-              />
-            </div>
-
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tokens:</span>
-                <span className="font-semibold text-foreground">{tokensToBuy}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Preço unitário:</span>
-                <span className="font-semibold text-foreground">R$ 5,00</span>
-              </div>
-              <div className="border-t border-primary/20 pt-2 flex justify-between">
-                <span className="text-sm font-semibold text-foreground">Total:</span>
-                <span className="text-lg font-bold text-primary">R$ {(tokensToBuy * 5).toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-accent/5 border border-accent/20 p-3">
-              <p className="text-xs text-muted-foreground">
-                O valor será debitado automaticamente do seu saldo na plataforma
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setBuyTokensModal(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleBuyTokens} 
-              disabled={isLoading || tokensToBuy < 1}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <DollarSign className="h-4 w-4 mr-2" />
-              Comprar por R$ {(tokensToBuy * 5).toFixed(2)}
             </Button>
           </DialogFooter>
         </DialogContent>
