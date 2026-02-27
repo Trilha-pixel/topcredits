@@ -1,0 +1,9 @@
+{
+    "record": {
+        "id": "test-uuid-12345",
+        "status": "completed",
+        "quantity": 10,
+        "product_id": null,
+        "delivery_link": null
+    }
+}
