@@ -4,25 +4,26 @@ import { useAdminData } from '@/hooks/useAdminData';
 import { useNavigate } from 'react-router-dom';
 import { AdminStats } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { 
-  LayoutDashboard, Package, Users, ShoppingCart, 
+import {
+  LayoutDashboard, Package, Users, ShoppingCart,
   LogOut, Search, MoreVertical, Check, X,
-  Eye, Edit, Trash2, Plus
+  Eye, Edit, Trash2, Plus, Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { DiagnosticPanel } from '@/components/admin/DiagnosticPanel';
+import CouponsTab from '@/components/admin/CouponsTab';
 import { toast } from 'sonner';
 
-type Tab = 'overview' | 'orders' | 'customers' | 'products';
+type Tab = 'overview' | 'orders' | 'customers' | 'products' | 'coupons';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { orders, resellers: customers, products, stats, isLoading } = useAdminData();
-  
+
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
     { id: 'orders', label: 'Pedidos', icon: Package },
     { id: 'customers', label: 'Clientes', icon: Users },
     { id: 'products', label: 'Produtos', icon: ShoppingCart },
+    { id: 'coupons', label: 'Cupons', icon: Tag },
   ];
 
   return (
@@ -98,11 +100,10 @@ const AdminDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as Tab)}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
@@ -119,6 +120,7 @@ const AdminDashboard = () => {
         {activeTab === 'orders' && <OrdersTab orders={orders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
         {activeTab === 'customers' && <CustomersTab customers={customers} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
         {activeTab === 'products' && <ProductsTab products={products} />}
+        {activeTab === 'coupons' && <CouponsTab />}
       </main>
     </div>
   );
@@ -187,7 +189,7 @@ const OverviewTab = ({ stats, orders }: any) => {
               <span className="text-sm font-medium text-emerald-500">R$ {creditsRevenue.toFixed(2)}</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-emerald-500/80 transition-all duration-500"
                 style={{ width: `${creditsPercentage}%` }}
               />
@@ -202,7 +204,7 @@ const OverviewTab = ({ stats, orders }: any) => {
               <span className="text-sm font-medium text-muted-foreground">R$ {apiRevenue.toFixed(2)}</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-muted-foreground/60 transition-all duration-500"
                 style={{ width: `${apiPercentage}%` }}
               />
@@ -255,13 +257,13 @@ const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredOrders = orders.filter((order: any) => {
-    const matchesSearch = 
+    const matchesSearch =
       order.user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.lovable_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.product_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -305,11 +307,10 @@ const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-medium text-foreground">{order.user_name || 'Cliente'}</p>
-                    <Badge variant="outline" className={`text-xs ${
-                      order.status === 'completed' ? 'bg-accent/10 text-accent border-accent/20' :
-                      order.status === 'pending' ? 'bg-warning/10 text-warning border-warning/20' :
-                      'bg-destructive/10 text-destructive border-destructive/20'
-                    }`}>
+                    <Badge variant="outline" className={`text-xs ${order.status === 'completed' ? 'bg-accent/10 text-accent border-accent/20' :
+                        order.status === 'pending' ? 'bg-warning/10 text-warning border-warning/20' :
+                          'bg-destructive/10 text-destructive border-destructive/20'
+                      }`}>
                       {order.status === 'completed' ? 'Concluído' : order.status === 'pending' ? 'Pendente' : 'Cancelado'}
                     </Badge>
                   </div>
@@ -421,13 +422,13 @@ const ProductsTab = ({ products }: any) => {
 
   const handleDelete = async (productId: number) => {
     if (!confirm('Tem certeza que deseja excluir este produto?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
-      
+
       if (error) throw error;
       toast.success('Produto excluído com sucesso');
     } catch (error: any) {
@@ -456,24 +457,23 @@ const ProductsTab = ({ products }: any) => {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">{product.name}</p>
-                  <Badge variant="outline" className={`text-xs mt-1 ${
-                    product.active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-muted text-muted-foreground'
-                  }`}>
+                  <Badge variant="outline" className={`text-xs mt-1 ${product.active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-muted text-muted-foreground'
+                    }`}>
                     {product.active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </div>
                 <div className="flex gap-1">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     className="h-8 w-8 p-0"
                     onClick={() => handleEdit(product)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     className="h-8 w-8 p-0 text-destructive"
                     onClick={() => handleDelete(product.id)}
                   >
@@ -574,9 +574,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
 
       console.log('Salvando produto:', productData);
       console.log('Produto ID:', product?.id);
-      
+
       await onSave(productData);
-      
+
       toast.success(product ? 'Produto atualizado com sucesso' : 'Produto criado com sucesso');
       onClose();
     } catch (error: any) {
@@ -593,7 +593,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">{title}</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm text-muted-foreground">Nome do Produto</label>

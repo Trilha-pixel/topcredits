@@ -10,18 +10,18 @@ const corsHeaders = {
 Deno.serve(async (req) => {
     // Preflight - MUST return 200 status
     if (req.method === 'OPTIONS') {
-        return new Response(null, { 
+        return new Response(null, {
             status: 200,
-            headers: corsHeaders 
+            headers: corsHeaders
         });
     }
 
     console.log(`[create-order] Nova requisição recebida: ${req.method}`);
 
     if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { 
-            status: 405, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
 
@@ -40,19 +40,19 @@ Deno.serve(async (req) => {
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
         if (userError || !user) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-                status: 401, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
 
         console.log(`[create-order] User authenticated: ${user.email}`);
 
-        // 2. Body Parsing
-        const { productId, customerName } = await req.json();
+        // 2. Body Parsing (Adicionado couponId)
+        const { productId, customerName, couponId } = await req.json();
         if (!productId) throw new Error('Product ID required');
 
-        console.log(`[create-order] Product ID: ${productId}`);
+        console.log(`[create-order] Product ID: ${productId}, Coupon ID: ${couponId || 'Nenhum'}`);
 
         // 3. Get Product
         const { data: product, error: prodError } = await supabaseClient
@@ -68,7 +68,44 @@ Deno.serve(async (req) => {
 
         console.log(`[create-order] Product found: ${product.name} - R$ ${product.price}`);
 
-        // 4. Check Balance
+        // 4. LÓGICA DE CUPOM (Validação no Backend)
+        let discount = 0;
+        let validCoupon = null;
+
+        if (couponId) {
+            const { data: couponData, error: couponError } = await supabaseClient
+                .from('coupons')
+                .select('*')
+                .eq('id', couponId)
+                .eq('is_active', true)
+                .single();
+
+            if (couponError || !couponData) {
+                throw new Error('Cupom inválido ou inativo');
+            }
+            if (couponData.current_uses >= couponData.max_uses) {
+                throw new Error('Este cupom atingiu o limite de usos');
+            }
+            if (product.price < couponData.min_purchase_value) {
+                throw new Error(`O valor mínimo para usar este cupom é R$ ${couponData.min_purchase_value}`);
+            }
+
+            validCoupon = couponData;
+
+            // Calcula o desconto real
+            if (couponData.discount_type === 'percentage') {
+                discount = product.price * (couponData.discount_value / 100);
+            } else {
+                discount = couponData.discount_value;
+            }
+        }
+
+        // Calcula o preço final garantindo que não fique negativo
+        const finalPrice = Math.max(product.price - discount, 0);
+        console.log(`[create-order] Original: R$ ${product.price}, Desconto: R$ ${discount}, Final: R$ ${finalPrice}`);
+
+
+        // 5. Check Balance
         const { data: wallet, error: walletError } = await supabaseClient
             .from('wallets')
             .select('balance')
@@ -84,16 +121,17 @@ Deno.serve(async (req) => {
 
         console.log(`[create-order] Current balance: R$ ${currentBalance}`);
 
-        if (currentBalance < product.price) {
+        // Verifica contra o finalPrice, não o product.price
+        if (currentBalance < finalPrice) {
             return new Response(JSON.stringify({ error: 'Saldo insuficiente. Faça um depósito via PIX.' }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
 
-        // 5. Execute Transaction
-        // 5.1 Debit Balance
-        const newBalance = currentBalance - product.price;
+        // 6. Execute Transaction
+        // 6.1 Debit Balance (Debita o valor com desconto)
+        const newBalance = currentBalance - finalPrice;
         const { error: updateError } = await supabaseClient
             .from('wallets')
             .update({
@@ -106,28 +144,37 @@ Deno.serve(async (req) => {
 
         console.log(`[create-order] Balance updated: R$ ${newBalance}`);
 
-        // 5.2 Log Transaction
+        // 6.2 Increment Coupon Use (Se um cupom foi usado validamente)
+        if (validCoupon) {
+            await supabaseClient.from('coupons')
+                .update({ current_uses: validCoupon.current_uses + 1 })
+                .eq('id', validCoupon.id);
+        }
+
+        // 6.3 Log Transaction
         await supabaseClient.from('transactions').insert({
             user_id: user.id,
             type: 'purchase',
-            amount: product.price,
+            amount: finalPrice,
             status: 'completed',
-            description: `Compra: ${product.name}`,
+            description: discount > 0 ? `Compra: ${product.name} (Desconto Cupom: R$ ${discount.toFixed(2)})` : `Compra: ${product.name}`,
             date: new Date().toISOString()
         });
 
-        // 5.3 Create Order - FIXED: usando credits_amount ao invés de quantity
+        // 6.4 Create Order
         const { data: order, error: orderError } = await supabaseClient
             .from('orders')
             .insert({
                 user_id: user.id,
                 product_id: product.id,
                 product_name: product.name,
-                price_at_purchase: product.price,
+                price_at_purchase: finalPrice, // Registra o valor pago
                 lovable_email: user.email,
                 status: 'completed',
-                credits_amount: product.credits_amount, // ✅ CORRETO - usa credits_amount
+                credits_amount: product.credits_amount,
                 delivery_link: null,
+                coupon_id: couponId || null, // Salva qual cupom foi usado
+                discount_applied: discount, // Salva o valor exato do desconto
                 created_at: new Date().toISOString()
             })
             .select()
@@ -140,7 +187,7 @@ Deno.serve(async (req) => {
 
         console.log(`[create-order] Order created: ${order.id}`);
 
-        // 6. Trigger Async Fulfillment (Fire and Forget)
+        // 7. Trigger Async Fulfillment (Fire and Forget)
         const functionsUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/buy-credits`;
         const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 

@@ -42,6 +42,8 @@ export interface Order {
     delivery_link: string | null;
     external_control_id?: string | null;
     customer_name?: string | null;
+    coupon_id?: string | null;
+    discount_applied?: number;
     profiles?: Profile; // For joins
     products?: Product; // For joins
 }
@@ -102,4 +104,29 @@ export interface AdminStats {
     credits_revenue: number;
     api_extension_revenue: number;
     new_customers_this_month: number;
+}
+
+export interface Coupon {
+    id: string;
+    code: string;
+    discount_type: 'percentage' | 'fixed';
+    discount_value: number;
+    max_uses: number | null;
+    current_uses: number;
+    min_purchase_value: number;
+    expires_at: string | null;
+    is_active: boolean;
+    created_at: string;
+}
+
+export interface CouponValidationResult {
+    valid: boolean;
+    error?: string;
+    coupon_id?: string;
+    code?: string;
+    discount_type?: 'percentage' | 'fixed';
+    discount_value?: number;
+    discount_amount?: number;
+    final_value?: number;
+    original_value?: number;
 }

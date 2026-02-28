@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Zap } from 'lucide-react';
+import { Zap, Tag, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,10 +9,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Product } from '@/types';
+import { Product, CouponValidationResult } from '@/types';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { couponsAPI } from '@/lib/coupons-api';
 import PurchaseSuccessModal from './PurchaseSuccessModal';
 
 interface PurchaseModalProps {
@@ -26,7 +27,43 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [orderData, setOrderData] = useState<{ deliveryLink: string; credits: number; orderId: string } | null>(null);
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponResult, setCouponResult] = useState<CouponValidationResult | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
   if (!product) return null;
+
+  const finalPrice = couponResult?.valid && couponResult.final_value !== undefined
+    ? couponResult.final_value
+    : product.price;
+
+  const discountAmount = couponResult?.valid && couponResult.discount_amount !== undefined
+    ? couponResult.discount_amount
+    : 0;
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    try {
+      const result = await couponsAPI.validate(couponCode, product.price);
+      setCouponResult(result);
+      if (result.valid) {
+        toast.success(`Cupom aplicado! Desconto de R$ ${Number(result.discount_amount).toFixed(2)}`);
+      } else {
+        toast.error(result.error || 'Cupom inválido');
+      }
+    } catch (err: any) {
+      toast.error('Erro ao validar cupom');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setCouponResult(null);
+  };
 
   const handleConfirm = async () => {
     if (loading) return;
@@ -43,7 +80,8 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
 
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
-          productId: product.id
+          productId: product.id,
+          couponId: couponResult?.valid ? couponResult.coupon_id : null,
         },
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -72,9 +110,9 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
       const orderId = data.order.id;
       let attempts = 0;
       const maxAttempts = 30; // 30 segundos
-      
+
       toast.loading('Gerando link de entrega...', { id: 'generating-link' });
-      
+
       const checkLink = async (): Promise<string> => {
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
@@ -85,12 +123,12 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
         if (orderError) throw orderError;
 
         const link = orderData?.delivery_link;
-        
+
         // Verifica se o link foi gerado e não é um erro
         if (link && link !== 'GERANDO LINK...' && !link.startsWith('ERRO_')) {
           return link;
         }
-        
+
         if (link?.startsWith('ERRO_')) {
           throw new Error(`Erro ao gerar link: ${link}`);
         }
@@ -105,7 +143,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
       };
 
       const deliveryLink = await checkLink();
-      
+
       toast.dismiss('generating-link');
 
       // Sucesso! Mostrar modal de sucesso
@@ -114,9 +152,12 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
         credits: product.credits_amount,
         orderId
       });
-      
+
+      // Reset coupon state
+      setCouponCode('');
+      setCouponResult(null);
       onOpenChange(false);
-      
+
       setTimeout(() => {
         setSuccessModalOpen(true);
       }, 300);
@@ -132,55 +173,124 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({ open, onOpenChange, produ
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground">
-            <Zap className="h-5 w-5 text-primary" />
-            Confirmar Compra
-          </DialogTitle>
-          <DialogDescription>
-            {product.name} — R$ {product.price.toFixed(2)}
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={open} onOpenChange={(val) => { if (!val) { setCouponCode(''); setCouponResult(null); } onOpenChange(val); }}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Zap className="h-5 w-5 text-primary" />
+              Confirmar Compra
+            </DialogTitle>
+            <DialogDescription>
+              {product.name} — R$ {product.price.toFixed(2)}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-6 pt-2">
-          <div className="rounded-xl bg-primary/5 border border-primary/20 p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Você vai receber</p>
-            <p className="text-3xl font-bold text-primary mb-1">{product.credits_amount} créditos</p>
-            <p className="text-sm text-foreground font-medium">Investimento: R$ {product.price.toFixed(2)}</p>
-          </div>
+          <div className="space-y-5 pt-2">
+            {/* Credits Preview */}
+            <div className="rounded-xl bg-primary/5 border border-primary/20 p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-2">Você vai receber</p>
+              <p className="text-3xl font-bold text-primary mb-1">{product.credits_amount} créditos</p>
+              {couponResult?.valid ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground line-through">R$ {product.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold text-emerald-500">R$ {Number(finalPrice).toFixed(2)}</p>
+                  <p className="text-xs text-emerald-500">Economia de R$ {Number(discountAmount).toFixed(2)}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground font-medium">Investimento: R$ {product.price.toFixed(2)}</p>
+              )}
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={handleConfirm}
-              disabled={loading}
-              className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20"
-            >
-              {loading ? 'Processando...' : 'Confirmar Pagamento'}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-              className="w-full"
-            >
-              Cancelar
-            </Button>
+            {/* Coupon Input */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Cupom de Desconto</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={couponCode}
+                    onChange={e => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      if (couponResult) setCouponResult(null);
+                    }}
+                    placeholder="CODIGO"
+                    className="pl-9 uppercase font-mono tracking-wider h-10"
+                    disabled={validatingCoupon || loading}
+                  />
+                </div>
+                {couponResult?.valid ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleRemoveCoupon}
+                    className="h-10 w-10 border-destructive/30 text-destructive hover:bg-destructive/10 flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!couponCode.trim() || validatingCoupon}
+                    onClick={handleValidateCoupon}
+                    className="h-10 px-4 flex-shrink-0"
+                  >
+                    {validatingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
+                  </Button>
+                )}
+              </div>
+
+              {/* Coupon Feedback */}
+              {couponResult?.valid && (
+                <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-xs text-emerald-500 font-medium">
+                    {couponResult.discount_type === 'percentage'
+                      ? `${couponResult.discount_value}% de desconto aplicado`
+                      : `R$ ${Number(couponResult.discount_value).toFixed(2)} de desconto`}
+                    {' '}— Economia: R$ {Number(couponResult.discount_amount).toFixed(2)}
+                  </p>
+                </div>
+              )}
+              {couponResult && !couponResult.valid && (
+                <p className="text-xs text-destructive">{couponResult.error}</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={handleConfirm}
+                disabled={loading}
+                className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20"
+              >
+                {loading ? 'Processando...' : couponResult?.valid
+                  ? `Pagar R$ ${Number(finalPrice).toFixed(2)}`
+                  : 'Confirmar Pagamento'
+                }
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+                className="w-full"
+              >
+                Cancelar
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-    
-    {orderData && (
-      <PurchaseSuccessModal
-        open={successModalOpen}
-        onOpenChange={setSuccessModalOpen}
-        deliveryLink={orderData.deliveryLink}
-        credits={orderData.credits}
-        productName={product.name}
-      />
-    )}
+        </DialogContent>
+      </Dialog>
+
+      {orderData && (
+        <PurchaseSuccessModal
+          open={successModalOpen}
+          onOpenChange={setSuccessModalOpen}
+          deliveryLink={orderData.deliveryLink}
+          credits={orderData.credits}
+          productName={product.name}
+        />
+      )}
     </>
   );
 };
