@@ -63,13 +63,13 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-white/30">
       {/* Background effects */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/[0.03] via-black to-black" />
-        <div className="absolute top-0 w-full h-[500px] bg-gradient-to-b from-white/[0.02] to-transparent" />
+      <div className="fixed inset-0 z-0 pointer-events-none bg-black">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/[0.05] via-black to-black" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mixed-blend-overlay" />
       </div>
 
       {/* Sticky Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/60 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/60 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-8'
         }`}>
         <div className="container mx-auto max-w-7xl px-6">
           <div className="flex items-center justify-between">
@@ -155,34 +155,53 @@ const Login = () => {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section id="hero" className="relative px-6 pt-40 pb-32 md:pt-52 md:pb-40 flex flex-col items-center justify-center text-center min-h-[90vh]">
-          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-sm hover:bg-white/10 transition-colors cursor-default">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-medium text-neutral-300 tracking-wide uppercase">Créditos Lovable Oficiais</span>
+        <section id="hero" className="relative px-6 pt-32 pb-32 md:pt-52 md:pb-40 flex flex-col items-center justify-center text-center min-h-screen">
+          <div className="relative z-10 animate-in fade-in slide-in-from-bottom-12 duration-1000 ease-out flex flex-col items-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 cursor-default group">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse group-hover:scale-125 transition-transform" />
+              <span className="text-[10px] md:text-xs font-bold text-neutral-300 tracking-[0.2em] uppercase">Créditos Lovable Oficiais</span>
             </div>
 
-            <h1 className="text-4xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 mb-8 pb-2">
-              Top Créditos
+            <h1 className="text-5xl md:text-8xl lg:text-[10rem] font-black tracking-[-0.04em] leading-[0.9] text-white mb-10">
+              <span className="inline-block animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">Top</span>
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/20 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">Créditos</span>
             </h1>
 
-            <p className="text-base md:text-2xl text-neutral-400 font-light max-w-2xl mx-auto leading-relaxed mb-12">
-              A forma mais minimalista e segura de adquirir seus créditos. <br className="hidden md:block" />
-              Entrega instantânea na sua conta.
+            <p className="text-base md:text-xl lg:text-2xl text-neutral-400 font-light max-w-2xl mx-auto leading-relaxed mb-16 px-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 whitespace-pre-line">
+              A forma mais premium, segura e minimalista de adquirir seus créditos Lovable.
+              Entrega instantânea via automação.
             </p>
 
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="group relative inline-flex items-center justify-center gap-3 h-12 md:h-14 px-8 md:px-10 text-sm md:text-base font-semibold bg-white text-black rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
-            >
-              <span className="relative z-10">Ver Pacotes de Créditos</span>
-              <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
-              <div className="absolute inset-0 bg-neutral-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
-            </button>
+            <div className="flex flex-col sm:flex-row items-center gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-700">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="group relative inline-flex items-center justify-center gap-3 h-16 px-12 text-base font-bold bg-white text-black rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.15)]"
+              >
+                <span className="relative z-10">Ver Pacotes de Créditos</span>
+                <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+                <div className="absolute inset-0 bg-neutral-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
+              </button>
 
-            <p className="text-sm text-neutral-600 mt-8 font-medium">
-              Mais de 500 créditos vendidos hoje
-            </p>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-sm shadow-2xl">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-neutral-800 flex items-center justify-center overflow-hidden">
+                      <img src={`/testimonials/br${i}.png`} alt={`Usuário ${i}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white leading-none">500+ brasileiros</p>
+                  <p className="text-xs text-neutral-500 font-medium">compraram hoje</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Scroll indicator */}
+            <div className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-20 animate-bounce">
+              <div className="w-px h-12 bg-gradient-to-b from-white to-transparent" />
+            </div>
           </div>
         </section>
 
