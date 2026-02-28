@@ -19,7 +19,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ClassPlayer from '@/components/academy/ClassPlayer';
 import { mockDownloads } from '@/lib/mock-data';
-import { cn } from '@/lib/utils'; // Assuming cn utility exists
+import { cn } from '@/lib/utils';
+import MobileNav from '@/components/ui/MobileNav'; // Assuming cn utility exists
 
 const fileIcons: Record<string, typeof FileJson> = {
   json: FileJson,
@@ -239,6 +240,7 @@ const Academy = () => {
           </Tabs>
         )}
       </main>
+      <MobileNav />
     </div>
   );
 };

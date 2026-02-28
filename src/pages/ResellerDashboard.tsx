@@ -6,7 +6,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Home, ShoppingCart, Receipt, BookOpen, ArrowRight, RefreshCw, Key, Gift, Sparkles, Headphones, ChevronDown, Settings, GraduationCap, LogOut, User, Image as ImageIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BalanceCard from '@/components/reseller/BalanceCard';
 import ProductCard from '@/components/reseller/ProductCard';
 import OrderCard from '@/components/reseller/OrderCard';
@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import logo from '@/assets/logo-neon.png';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import MobileNav from '@/components/ui/MobileNav';
 
 type Tab = 'home' | 'buy' | 'orders' | 'academy';
 type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
@@ -28,6 +29,7 @@ type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
 const ResellerDashboard = () => {
   const { user, balance, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { orders, transactions, isLoading: loadingData, refetch } = useResellerData(user?.id);
   const { products, isLoading: loadingProducts } = useProducts();
 
@@ -97,7 +99,7 @@ const ResellerDashboard = () => {
       setAuthModal(true);
       return;
     }
-    
+
     setSelectedProduct(product);
     setPurchaseModal(true);
   };
@@ -142,51 +144,54 @@ const ResellerDashboard = () => {
               <span className="text-sm font-medium text-white">Top Créditos</span>
             </div>
 
-            {/* Navigation Links - Center */}
-            <div className="hidden md:flex items-center gap-8">
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="text-sm font-medium text-white transition-colors"
-              >
-                Início
-              </button>
-              <button
-                onClick={() => navigate('/pedidos')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Meus Pedidos
-              </button>
-              <button
-                onClick={() => navigate('/licencas')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Licenças
-              </button>
-              <button
-                onClick={() => navigate('/academy')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Academy
-              </button>
-              <button
-                onClick={() => navigate('/ajuda')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Suporte
-              </button>
+            {/* Navigation Links - Center (Fluid) */}
+            <div className="hidden md:flex items-center bg-white/[0.03] p-1 rounded-full border border-white/5 relative">
+              {/* Sliding Background Pill */}
+              <div
+                className="absolute h-[calc(100%-8px)] top-1 rounded-full bg-white/10 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
+                style={{
+                  width: 'calc(20% - 4px)', // Assuming 5 items
+                  left: `${location.pathname === '/dashboard' ? '2px' :
+                    location.pathname === '/pedidos' ? 'calc(20% + 2px)' :
+                      location.pathname === '/licencas' ? 'calc(40% + 2px)' :
+                        location.pathname === '/academy' ? 'calc(60% + 2px)' : 'calc(80% + 2px)'
+                    }`
+                }}
+              />
+
+              {[
+                { label: 'Início', path: '/dashboard' },
+                { label: 'Meus Pedidos', path: '/pedidos' },
+                { label: 'Licenças', path: '/licencas' },
+                { label: 'Academy', path: '/academy' },
+                { label: 'Suporte', path: '/ajuda' },
+              ].map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <button
+                    key={link.path}
+                    onClick={() => navigate(link.path)}
+                    className={`relative z-10 px-5 py-1.5 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                  >
+                    {link.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Profile Menu - Right */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/ajuda')}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20 hover:scale-110 transition-all border border-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                title="Suporte"
               >
                 <Headphones className="h-4 w-4" />
               </button>
-              
+
               <div className="h-5 w-px bg-white/10" />
-              
+
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -251,7 +256,7 @@ const ResellerDashboard = () => {
           <section className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md p-8 md:p-10 relative overflow-hidden">
             {/* Ambient glow */}
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
-            
+
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 relative z-10 gap-6">
               <div className="space-y-2">
                 <p className="text-sm font-medium tracking-widest text-neutral-500 uppercase flex items-center gap-2">
@@ -332,8 +337,8 @@ const ResellerDashboard = () => {
                   <div>
                     <p className="text-3xl font-light text-foreground">R$ {p.price.toFixed(2)}</p>
                   </div>
-                  <Button 
-                    className="w-full rounded-full" 
+                  <Button
+                    className="w-full rounded-full"
                     variant={balance >= p.price ? "default" : "outline"}
                     disabled={balance < p.price}
                   >
@@ -378,12 +383,12 @@ const ResellerDashboard = () => {
                     <div className={`h-10 w-10 md:h-12 md:w-12 rounded-full ${buyer.badge} flex items-center justify-center text-white font-bold text-sm md:text-base flex-shrink-0 shadow-lg`}>
                       #{buyer.position}
                     </div>
-                    
+
                     {/* User Avatar */}
                     <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gradient-to-b from-neutral-800 to-neutral-950 flex items-center justify-center text-white font-mono font-medium text-xs md:text-sm border border-white/10 flex-shrink-0 group-hover:border-white/20 transition-colors">
                       {buyer.name.substring(0, 2).toUpperCase()}
                     </div>
-                    
+
                     {/* User Info */}
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
@@ -395,7 +400,7 @@ const ResellerDashboard = () => {
                       <p className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-neutral-500 font-medium">Membro ativo</p>
                     </div>
                   </div>
-                  
+
                   {/* Credits */}
                   <div className="text-right flex-shrink-0">
                     <p className="text-xl md:text-3xl font-light text-white tracking-tighter">
@@ -412,7 +417,7 @@ const ResellerDashboard = () => {
         {/* Networking Group CTA */}
         <section className="relative overflow-hidden rounded-md border border-border bg-[#0A0A0A] p-10 hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-          
+
           <div className="relative z-10 max-w-3xl mx-auto text-center space-y-8">
             {/* Icon Badge */}
             <div className="inline-flex h-20 w-20 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-sm border border-primary/20">
@@ -420,7 +425,7 @@ const ResellerDashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            
+
             {/* Content */}
             <div className="space-y-4">
               <h3 className="text-3xl font-bold text-foreground" style={{ letterSpacing: '-0.02em' }}>
@@ -460,7 +465,7 @@ const ResellerDashboard = () => {
                 Entrar no Grupo de Networking
                 <ArrowRight className="ml-2 h-5 w-5" strokeWidth={1.5} />
               </Button>
-              
+
               <p className="text-sm text-muted-foreground/80 font-medium">
                 Vagas limitadas — comunidade criada para revendedores
               </p>
@@ -542,14 +547,12 @@ const ResellerDashboard = () => {
                   className="flex items-center justify-between p-6 rounded-2xl border border-border bg-card hover:border-primary/40 cursor-pointer transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                      order.status === 'completed' ? 'bg-accent/10' :
+                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${order.status === 'completed' ? 'bg-accent/10' :
                       order.status === 'pending' ? 'bg-warning/10' : 'bg-destructive/10'
-                    }`}>
-                      <Receipt className={`h-5 w-5 ${
-                        order.status === 'completed' ? 'text-accent' :
+                      }`}>
+                      <Receipt className={`h-5 w-5 ${order.status === 'completed' ? 'text-accent' :
                         order.status === 'pending' ? 'text-warning' : 'text-destructive'
-                      }`} />
+                        }`} />
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{order.product_name}</p>
@@ -569,28 +572,7 @@ const ResellerDashboard = () => {
 
       </main>
 
-      {/* Bottom Navigation - Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
-        <div className="flex items-center justify-around py-2">
-          {[
-            { key: 'home' as Tab, icon: Home, label: 'Home', action: () => setActiveTab('home') },
-            { key: 'buy' as Tab, icon: ShoppingCart, label: 'Comprar', action: () => navigate('/pacotes') },
-            { key: 'orders' as Tab, icon: Receipt, label: 'Pedidos', action: () => navigate('/pedidos') },
-            { key: 'academy' as Tab, icon: BookOpen, label: 'Academy', action: () => navigate('/academy') },
-          ].map(item => (
-            <button
-              key={item.key}
-              onClick={item.action}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-                activeTab === item.key ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <MobileNav />
 
       {/* Modals */}
       <DepositModal open={depositModal} onOpenChange={setDepositModal} />

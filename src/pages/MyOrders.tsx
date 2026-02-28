@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResellerData } from '@/hooks/useResellerData';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,14 @@ import OrderDetailSheet from '@/components/reseller/OrderDetailSheet';
 import { Order } from '@/types';
 import logo from '@/assets/logo-neon.png';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import MobileNav from '@/components/ui/MobileNav';
 
 type OrderFilter = 'all' | 'pending' | 'completed' | 'cancelled';
 
 const MyOrders = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { orders, isLoading, refetch } = useResellerData(user?.id);
   const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +49,7 @@ const MyOrders = () => {
 
   const filteredOrders = orders
     .filter(o => orderFilter === 'all' || o.status === orderFilter)
-    .filter(o => searchQuery === '' || 
+    .filter(o => searchQuery === '' ||
       o.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.id.toString().includes(searchQuery)
     );
@@ -99,51 +101,54 @@ const MyOrders = () => {
               <span className="text-sm font-medium text-white">Top Créditos</span>
             </div>
 
-            {/* Navigation Links - Center */}
-            <div className="hidden md:flex items-center gap-8">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Início
-              </button>
-              <button
-                onClick={() => navigate('/pedidos')}
-                className="text-sm font-medium text-white transition-colors"
-              >
-                Meus Pedidos
-              </button>
-              <button
-                onClick={() => navigate('/licencas')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Licenças
-              </button>
-              <button
-                onClick={() => navigate('/academy')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Academy
-              </button>
-              <button
-                onClick={() => navigate('/ajuda')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Suporte
-              </button>
+            {/* Navigation Links - Center (Fluid) */}
+            <div className="hidden md:flex items-center bg-white/[0.03] p-1 rounded-full border border-white/5 relative">
+              {/* Sliding Background Pill */}
+              <div
+                className="absolute h-[calc(100%-8px)] top-1 rounded-full bg-white/10 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
+                style={{
+                  width: 'calc(20% - 4px)',
+                  left: `${location.pathname === '/dashboard' ? '2px' :
+                    location.pathname === '/pedidos' ? 'calc(20% + 2px)' :
+                      location.pathname === '/licencas' ? 'calc(40% + 2px)' :
+                        location.pathname === '/academy' ? 'calc(60% + 2px)' : 'calc(80% + 2px)'
+                    }`
+                }}
+              />
+
+              {[
+                { label: 'Início', path: '/dashboard' },
+                { label: 'Meus Pedidos', path: '/pedidos' },
+                { label: 'Licenças', path: '/licencas' },
+                { label: 'Academy', path: '/academy' },
+                { label: 'Suporte', path: '/ajuda' },
+              ].map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <button
+                    key={link.path}
+                    onClick={() => navigate(link.path)}
+                    className={`relative z-10 px-5 py-1.5 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                  >
+                    {link.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Profile Menu - Right */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/ajuda')}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20 hover:scale-110 transition-all border border-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                title="Suporte"
               >
                 <Headphones className="h-4 w-4" />
               </button>
-              
+
               <div className="h-5 w-px bg-white/10" />
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
@@ -264,14 +269,12 @@ const MyOrders = () => {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                      order.status === 'completed' ? 'bg-green-500/10' :
+                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${order.status === 'completed' ? 'bg-green-500/10' :
                       order.status === 'pending' ? 'bg-yellow-500/10' : 'bg-red-500/10'
-                    }`}>
-                      <Receipt className={`h-6 w-6 ${
-                        order.status === 'completed' ? 'text-green-500' :
+                      }`}>
+                      <Receipt className={`h-6 w-6 ${order.status === 'completed' ? 'text-green-500' :
                         order.status === 'pending' ? 'text-yellow-500' : 'text-red-500'
-                      }`} />
+                        }`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -308,33 +311,12 @@ const MyOrders = () => {
         )}
       </main>
 
-      {/* Bottom Navigation - Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
-        <div className="flex items-center justify-around py-2">
-          {[
-            { key: 'home', icon: Home, label: 'Home', path: '/dashboard' },
-            { key: 'buy', icon: ShoppingCart, label: 'Comprar', path: '/pacotes' },
-            { key: 'orders', icon: Receipt, label: 'Pedidos', path: '/pedidos' },
-            { key: 'academy', icon: BookOpen, label: 'Academy', path: '/academy' },
-          ].map(item => (
-            <button
-              key={item.key}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-                item.key === 'orders' ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <MobileNav />
 
-      <OrderDetailSheet 
-        order={selectedOrder} 
-        open={orderSheetOpen} 
-        onOpenChange={setOrderSheetOpen} 
+      <OrderDetailSheet
+        order={selectedOrder}
+        open={orderSheetOpen}
+        onOpenChange={setOrderSheetOpen}
       />
     </div>
   );

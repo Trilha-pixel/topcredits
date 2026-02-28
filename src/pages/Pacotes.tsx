@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '@/components/reseller/ProductCard';
 import PurchaseModal from '@/components/reseller/PurchaseModal';
+import MobileNav from '@/components/ui/MobileNav';
 
 const Pacotes = () => {
   const { balance } = useAuth();
@@ -30,8 +31,8 @@ const Pacotes = () => {
       <header className="sticky top-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate('/dashboard')} 
+            <button
+              onClick={() => navigate('/dashboard')}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/5 text-neutral-400 hover:text-white"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -83,6 +84,7 @@ const Pacotes = () => {
       </main>
 
       <PurchaseModal open={purchaseModal} onOpenChange={setPurchaseModal} product={selectedProduct} />
+      <MobileNav />
     </div>
   );
 };
