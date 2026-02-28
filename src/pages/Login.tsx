@@ -206,7 +206,7 @@ const Login = () => {
         </section>
 
         {/* Features */}
-        <section id="pacotes" className="relative px-6 py-32 border-t border-white/5 bg-gradient-to-b from-black to-neutral-950">
+        <section id="pacotes" className="relative px-6 py-32 border-t border-white/5 bg-transparent">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-24">
               <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
@@ -239,7 +239,7 @@ const Login = () => {
         </section>
 
         {/* Testimonials & Proofs */}
-        <section id="leaderboard" className="relative px-6 py-32 border-t border-white/5 bg-gradient-to-b from-neutral-950 to-black overflow-hidden">
+        <section id="leaderboard" className="relative px-6 py-32 border-t border-white/5 bg-transparent overflow-hidden">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-20 relative z-10">
               <h2 className="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">
@@ -392,7 +392,7 @@ const Login = () => {
         </section>
 
         {/* Networking Group CTA Section */}
-        <section className="relative px-6 py-20 md:py-32 border-t border-white/5 bg-gradient-to-b from-black via-green-950/5 to-black overflow-hidden">
+        <section className="relative px-6 py-20 md:py-32 border-t border-white/5 bg-transparent overflow-hidden">
           {/* Background glow effect */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-green-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
@@ -500,7 +500,7 @@ const Login = () => {
       </main>
 
       {/* Footer */}
-      <footer className="relative px-6 py-20 border-t border-white/10 bg-neutral-950">
+      <footer className="relative px-6 py-20 border-t border-white/10 bg-transparent">
         <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8 mb-16">
             {/* Brand Column */}
