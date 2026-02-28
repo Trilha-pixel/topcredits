@@ -242,7 +242,7 @@ const ResellerDashboard = () => {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-6xl px-6 py-12 space-y-12">
+      <main className="mx-auto max-w-6xl px-6 py-12 pb-32 space-y-8">
         {/* Greeting - Minimalista */}
         <div className="space-y-2 pt-4">
           <h1 className="text-4xl font-semibold tracking-tight text-white">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,10 +16,12 @@ import logo from '@/assets/logo-neon.png';
 import SimplePurchaseModal from '@/components/licenses/SimplePurchaseModal';
 import DepositModal from '@/components/reseller/DepositModal';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import MobileNav from '@/components/ui/MobileNav';
 
 const Licencas = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [licenses, setLicenses] = useState<License[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -27,10 +29,10 @@ const Licencas = () => {
   const [resellerName, setResellerName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [generateModal, setGenerateModal] = useState(false);
   const [trialModal, setTrialModal] = useState(false);
   const [depositModal, setDepositModal] = useState(false);
@@ -201,51 +203,54 @@ const Licencas = () => {
               <span className="text-sm font-medium text-white">Top Créditos</span>
             </div>
 
-            {/* Navigation Links - Center */}
-            <div className="hidden md:flex items-center gap-8">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Início
-              </button>
-              <button
-                onClick={() => navigate('/pedidos')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Meus Pedidos
-              </button>
-              <button
-                onClick={() => navigate('/licencas')}
-                className="text-sm font-medium text-white transition-colors"
-              >
-                Licenças
-              </button>
-              <button
-                onClick={() => navigate('/academy')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Academy
-              </button>
-              <button
-                onClick={() => navigate('/ajuda')}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                Suporte
-              </button>
+            {/* Navigation Links - Center (Fluid) */}
+            <div className="hidden md:flex items-center bg-white/[0.03] p-1 rounded-full border border-white/5 relative">
+              {/* Sliding Background Pill */}
+              <div
+                className="absolute h-[calc(100%-8px)] top-1 rounded-full bg-white/10 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
+                style={{
+                  width: 'calc(20% - 4px)',
+                  left: `${location.pathname === '/dashboard' ? '2px' :
+                    location.pathname === '/pedidos' ? 'calc(20% + 2px)' :
+                      location.pathname === '/licencas' ? 'calc(40% + 2px)' :
+                        location.pathname === '/academy' ? 'calc(60% + 2px)' : 'calc(80% + 2px)'
+                    }`
+                }}
+              />
+
+              {[
+                { label: 'Início', path: '/dashboard' },
+                { label: 'Meus Pedidos', path: '/pedidos' },
+                { label: 'Licenças', path: '/licencas' },
+                { label: 'Academy', path: '/academy' },
+                { label: 'Suporte', path: '/ajuda' },
+              ].map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <button
+                    key={link.path}
+                    onClick={() => navigate(link.path)}
+                    className={`relative z-10 px-5 py-1.5 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                  >
+                    {link.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Profile Menu - Right */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/ajuda')}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20 hover:scale-110 transition-all border border-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                title="Suporte"
               >
                 <Headphones className="h-4 w-4" />
               </button>
-              
+
               <div className="h-5 w-px bg-white/10" />
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">
@@ -284,64 +289,58 @@ const Licencas = () => {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-6">
-        {/* Explicação da Extensão */}
-        <div className="relative overflow-hidden rounded-md border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-8">
-          <div className="absolute top-0 right-0 h-96 w-96 bg-primary/10 rounded-full blur-3xl -z-0" />
-          <div className="relative z-10 space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-md bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Key className="h-8 w-8 text-primary" />
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 pb-32 space-y-6">
+        {/* Explicação da Extensão - Legendary Centered Card */}
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-black p-8 md:p-12 text-center group">
+          {/* Animated Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 opacity-50 group-hover:opacity-70 transition-opacity duration-700" />
+          <div className="absolute -top-24 -left-24 h-96 w-96 bg-primary/20 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute -bottom-24 -right-24 h-96 w-96 bg-accent/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
+
+          <div className="relative z-10 max-w-3xl mx-auto space-y-8">
+            <div className="space-y-4">
+              <div className="inline-flex items-center justify-center h-20 w-20 rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 border border-white/10 mb-2 group-hover:scale-110 transition-transform duration-500 shadow-2xl shadow-primary/20">
+                <Key className="h-10 w-10 text-primary" />
               </div>
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold text-foreground mb-3" style={{ letterSpacing: '-0.02em' }}>
-                  Extensão Lovable - Créditos Infinitos
-                </h2>
-                <p className="text-base text-muted-foreground font-medium leading-relaxed mb-4">
-                  Nossa extensão exclusiva permite que você utilize créditos infinitos na plataforma Lovable. 
-                  A extensão "congela" seus créditos, permitindo que você desenvolva projetos ilimitados sem se preocupar com o consumo.
-                </p>
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
-                  <div className="flex items-start gap-3 p-4 rounded-md bg-card/50 border border-border">
-                    <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-bold text-foreground mb-1">Créditos Congelados</p>
-                      <p className="text-xs text-muted-foreground">Seus créditos não são consumidos durante o uso</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-md bg-card/50 border border-border">
-                    <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-bold text-foreground mb-1">Uso Ilimitado</p>
-                      <p className="text-xs text-muted-foreground">Desenvolva quantos projetos quiser</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-md bg-card/50 border border-border">
-                    <Lock className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-bold text-foreground mb-1">100% Seguro</p>
-                      <p className="text-xs text-muted-foreground">Extensão testada e aprovada</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent tracking-tight">
+                Extensão Lovable <br className="hidden md:block" />
+                <span className="text-primary">Créditos Infinitos</span>
+              </h2>
+              <p className="text-lg text-gray-400 font-medium leading-relaxed max-w-2xl mx-auto">
+                Nossa extensão exclusiva permite que você utilize créditos infinitos na plataforma Lovable.
+                Desenvolva projetos ilimitados sem se preocupar com o consumo.
+              </p>
             </div>
 
-            {/* Vídeo Explicativo */}
-            <div className="rounded-md overflow-hidden border border-border bg-black">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { icon: CheckCircle2, title: 'Créditos Congelados', desc: 'Não consome nada', color: 'text-accent' },
+                { icon: Sparkles, title: 'Uso Ilimitado', desc: 'Projetos infinitos', color: 'text-primary' },
+                { icon: Lock, title: '100% Seguro', desc: 'Testado e aprovado', color: 'text-green-400' }
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col items-center p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 backdrop-blur-sm hover:bg-white/[0.06] transition-colors">
+                  <item.icon className={`h-6 w-6 ${item.color} mb-3`} />
+                  <p className="text-sm font-bold text-white mb-1">{item.title}</p>
+                  <p className="text-xs text-gray-500">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Vídeo Explicativo - Enhanced */}
+            <div className="rounded-[2rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl">
               <div style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
-                <iframe 
-                  src="https://player.vimeo.com/video/1164109842?badge=0&autopause=0&player_id=0&app_id=58479" 
-                  frameBorder="0" 
-                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share" 
-                  referrerPolicy="strict-origin-when-cross-origin" 
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} 
+                <iframe
+                  src="https://player.vimeo.com/video/1164109842?badge=0&autopause=0&player_id=0&app_id=58479"
+                  frameBorder="0"
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                   title="CONGELEI O LOVABLE! Novo Bot de Créditos Infinitos (Não Gasta Nada!)"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <Button
                 onClick={handleDownloadExtension}
                 disabled={!downloadUrl || loadingDownload}
@@ -377,29 +376,29 @@ const Licencas = () => {
               Gere e gerencie licenças para a extensão Lovable
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => navigate('/dashboard')} 
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              onClick={() => navigate('/dashboard')}
               variant="outline"
-              className="border-border hover:bg-secondary"
+              className="flex-1 sm:flex-none border-border hover:bg-secondary rounded-xl"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar
             </Button>
-            <Button 
-              onClick={() => setTrialModal(true)} 
-              variant="outline" 
-              className="border-accent/20 hover:bg-accent/10 text-accent"
+            <Button
+              onClick={() => setTrialModal(true)}
+              variant="outline"
+              className="flex-1 sm:flex-none border-accent/20 hover:bg-accent/10 text-accent rounded-xl"
             >
               <Gift className="h-4 w-4 mr-2" />
               Teste Grátis
             </Button>
-            <Button 
-              onClick={() => setGenerateModal(true)} 
-              className="bg-primary hover:bg-primary/90"
+            <Button
+              onClick={() => setGenerateModal(true)}
+              className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 rounded-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Gerar Licença
+              Gerar
             </Button>
           </div>
         </div>
@@ -413,10 +412,10 @@ const Licencas = () => {
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
               <p className="text-4xl font-bold text-primary mb-4">R$ {walletBalance.toFixed(2)}</p>
-              <Button 
-                onClick={() => setDepositModal(true)} 
-                size="sm" 
-                variant="outline" 
+              <Button
+                onClick={() => setDepositModal(true)}
+                size="sm"
+                variant="outline"
                 className="w-full border-primary/30 hover:bg-primary/10 text-primary hover:text-primary"
               >
                 <DollarSign className="h-3.5 w-3.5 mr-2" />
@@ -467,41 +466,41 @@ const Licencas = () => {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button 
-              variant={statusFilter === '' ? 'default' : 'outline'} 
+            <Button
+              variant={statusFilter === '' ? 'default' : 'outline'}
               size="default"
               onClick={() => setStatusFilter('')}
               className="rounded-xl"
             >
               Todos
             </Button>
-            <Button 
-              variant={statusFilter === 'Ativa' ? 'default' : 'outline'} 
+            <Button
+              variant={statusFilter === 'Ativa' ? 'default' : 'outline'}
               size="default"
               onClick={() => setStatusFilter('Ativa')}
               className="rounded-xl"
             >
               Ativas
             </Button>
-            <Button 
-              variant={statusFilter === 'Expirada' ? 'default' : 'outline'} 
+            <Button
+              variant={statusFilter === 'Expirada' ? 'default' : 'outline'}
               size="default"
               onClick={() => setStatusFilter('Expirada')}
               className="rounded-xl"
             >
               Expiradas
             </Button>
-            <Button 
-              variant={statusFilter === 'Bloqueada' ? 'default' : 'outline'} 
+            <Button
+              variant={statusFilter === 'Bloqueada' ? 'default' : 'outline'}
               size="default"
               onClick={() => setStatusFilter('Bloqueada')}
               className="rounded-xl"
             >
               Bloqueadas
             </Button>
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline" 
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
               size="default"
               className="rounded-xl"
             >
@@ -515,7 +514,7 @@ const Licencas = () => {
             <Sparkles className="h-5 w-5 text-primary" />
             Licenças Geradas ({total})
           </h2>
-          
+
           {licenses.length === 0 ? (
             <div className="text-center py-20 rounded-3xl border border-dashed border-border bg-card/30">
               <Key className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
@@ -530,20 +529,18 @@ const Licencas = () => {
               {licenses.map(license => {
                 const s = getStatusConfig(license.status);
                 const StatusIcon = s.icon;
-                
+
                 return (
                   <div key={license.id} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 hover:border-primary/30 transition-all duration-300">
                     <div className="flex items-start gap-5">
-                      <div className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                        license.status === 'Ativa' ? 'bg-accent/10' : 
+                      <div className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${license.status === 'Ativa' ? 'bg-accent/10' :
                         license.status === 'Bloqueada' ? 'bg-destructive/10' : 'bg-warning/10'
-                      }`}>
-                        <StatusIcon className={`h-7 w-7 ${
-                          license.status === 'Ativa' ? 'text-accent' :
+                        }`}>
+                        <StatusIcon className={`h-7 w-7 ${license.status === 'Ativa' ? 'text-accent' :
                           license.status === 'Bloqueada' ? 'text-destructive' : 'text-warning'
-                        }`} />
+                          }`} />
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 space-y-3">
                         <div className="flex items-center gap-3 flex-wrap">
                           <span className="text-lg font-semibold text-foreground">{license.client_name}</span>
@@ -555,10 +552,10 @@ const Licencas = () => {
                             {license.plan}
                           </Badge>
                         </div>
-                        
+
                         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                          <button 
-                            onClick={() => copyLicenseKey(license.key)} 
+                          <button
+                            onClick={() => copyLicenseKey(license.key)}
                             className="flex items-center gap-2 hover:text-primary transition-colors font-mono bg-secondary/50 px-3 py-1.5 rounded-lg"
                           >
                             {copiedKey === license.key ? (
@@ -575,27 +572,29 @@ const Licencas = () => {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 flex-shrink-0">
+                      <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
                         {license.status === 'Ativa' && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => blockLicense(license.id)} 
-                            className="text-destructive hover:bg-destructive/10 h-10 w-10 p-0 rounded-xl" 
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => blockLicense(license.id)}
+                            className="h-10 px-4 rounded-xl sm:w-10 sm:p-0"
                             title="Bloquear Licença"
                           >
                             <Lock className="h-4 w-4" />
+                            <span className="ml-2 sm:hidden">Bloquear</span>
                           </Button>
                         )}
                         {license.status === 'Bloqueada' && (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => unblockLicense(license.id)} 
-                            className="text-accent hover:bg-accent/10 h-10 w-10 p-0 rounded-xl" 
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => unblockLicense(license.id)}
+                            className="h-10 px-4 rounded-xl border-accent/30 text-accent sm:w-10 sm:p-0"
                             title="Desbloquear Licença"
                           >
                             <Unlock className="h-4 w-4" />
+                            <span className="ml-2 sm:hidden">Desbloquear</span>
                           </Button>
                         )}
                       </div>
@@ -612,20 +611,20 @@ const Licencas = () => {
                 Mostrando {offset + 1} - {Math.min(offset + limit, total)} de {total}
               </p>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="default"
                   className="rounded-xl"
-                  onClick={() => setOffset(Math.max(0, offset - limit))} 
+                  onClick={() => setOffset(Math.max(0, offset - limit))}
                   disabled={offset === 0}
                 >
                   Anterior
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="default"
                   className="rounded-xl"
-                  onClick={() => setOffset(offset + limit)} 
+                  onClick={() => setOffset(offset + limit)}
                   disabled={offset + limit >= total}
                 >
                   Próxima
@@ -669,28 +668,7 @@ const Licencas = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Bottom Navigation - Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur-xl sm:hidden">
-        <div className="flex items-center justify-around py-2">
-          {[
-            { key: 'home', icon: Home, label: 'Home', path: '/dashboard' },
-            { key: 'buy', icon: ShoppingCart, label: 'Comprar', path: '/pacotes' },
-            { key: 'orders', icon: Receipt, label: 'Pedidos', path: '/pedidos' },
-            { key: 'academy', icon: BookOpen, label: 'Academy', path: '/academy' },
-          ].map(item => (
-            <button
-              key={item.key}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-                item.key === 'home' ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <MobileNav />
 
       {/* Modals */}
       <DepositModal open={depositModal} onOpenChange={setDepositModal} />

@@ -187,7 +187,7 @@ const MyOrders = () => {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-6xl px-6 py-12 space-y-8">
+      <main className="relative z-10 mx-auto max-w-6xl px-6 py-20 pb-32 space-y-8">
         {/* Back Button */}
         <Button
           variant="ghost"

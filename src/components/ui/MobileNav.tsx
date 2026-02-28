@@ -30,8 +30,9 @@ const MobileNav = () => {
                 <div
                     className="absolute h-[calc(100%-12px)] top-1.5 rounded-[2rem] bg-white/10 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
                     style={{
-                        width: 'calc(25% - 6px)',
-                        transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 4}px))`
+                        width: 'calc(25% - 8px)',
+                        left: '4px',
+                        transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 0}px))`
                     }}
                 />
 

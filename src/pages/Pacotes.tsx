@@ -51,7 +51,7 @@ const Pacotes = () => {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-6xl px-6 py-20">
+      <main className="relative z-10 mx-auto max-w-6xl px-6 py-20 pb-40">
         <div className="text-center mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-blue-400" />
