@@ -6,6 +6,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,13 +69,12 @@ const Login = () => {
       </div>
 
       {/* Sticky Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? 'bg-black/60 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'
-      }`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'bg-black/60 backdrop-blur-2xl border-b border-white/5 py-4' : 'bg-transparent py-6'
+        }`}>
         <div className="container mx-auto max-w-7xl px-6">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <button 
+            <button
               onClick={() => scrollToSection('hero')}
               className="text-xl font-bold tracking-tighter text-white hover:opacity-80 transition-opacity"
             >
@@ -95,11 +95,59 @@ const Login = () => {
             </div>
 
             {/* CTA Button */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="hidden sm:block text-sm font-semibold text-white px-5 py-2.5 rounded-full bg-white/10 hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md"
+              >
+                Minha Conta
+              </button>
+
+              {/* Mobile Menu Toggle */}
+              <button
+                className="md:hidden text-white p-2"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <div className="flex flex-col gap-1.5 w-6">
+                  <div className={`h-0.5 w-full bg-white transition-transform ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                  <div className={`h-0.5 w-full bg-white transition-opacity ${mobileMenuOpen ? 'opacity-0' : ''}`} />
+                  <div className={`h-0.5 w-full bg-white transition-transform ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        <div className={`fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl transition-all duration-500 md:hidden ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}>
+          <div className="flex flex-col items-center justify-center h-full gap-8">
+            {['Início', 'Pacotes', 'Leaderboard', 'Suporte'].map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  item === 'Pacotes' ? navigate('/dashboard') : item === 'Suporte' ? navigate('/ajuda') : scrollToSection(item.toLowerCase());
+                }}
+                className="text-2xl font-bold text-white hover:text-neutral-400 transition-colors"
+              >
+                {item}
+              </button>
+            ))}
             <button
-              onClick={() => navigate('/dashboard')}
-              className="text-sm font-semibold text-white px-5 py-2.5 rounded-full bg-white/10 hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/dashboard');
+              }}
+              className="mt-4 px-8 py-4 rounded-full bg-white text-black font-bold text-lg"
             >
               Minha Conta
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-6 right-6 text-white p-4"
+            >
+              ✕
             </button>
           </div>
         </div>
@@ -113,19 +161,19 @@ const Login = () => {
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-xs font-medium text-neutral-300 tracking-wide uppercase">Créditos Lovable Oficiais</span>
             </div>
-            
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 mb-8 pb-2">
+
+            <h1 className="text-4xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 mb-8 pb-2">
               Top Créditos
             </h1>
-            
-            <p className="text-lg md:text-2xl text-neutral-400 font-light max-w-2xl mx-auto leading-relaxed mb-12">
+
+            <p className="text-base md:text-2xl text-neutral-400 font-light max-w-2xl mx-auto leading-relaxed mb-12">
               A forma mais minimalista e segura de adquirir seus créditos. <br className="hidden md:block" />
               Entrega instantânea na sua conta.
             </p>
 
             <button
               onClick={() => navigate('/dashboard')}
-              className="group relative inline-flex items-center justify-center gap-3 h-14 px-10 text-base font-semibold bg-white text-black rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
+              className="group relative inline-flex items-center justify-center gap-3 h-12 md:h-14 px-8 md:px-10 text-sm md:text-base font-semibold bg-white text-black rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
             >
               <span className="relative z-10">Ver Pacotes de Créditos</span>
               <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
@@ -149,8 +197,8 @@ const Login = () => {
                 Por que escolher a Top Créditos?
               </p>
             </div>
-            
-            <div className="grid md:grid-cols-4 gap-8">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
               {[
                 { icon: Zap, title: 'Instantâneo', desc: 'Créditos na sua conta em segundos após o pagamento.' },
                 { icon: Shield, title: '100% Seguro', desc: 'Criptografia de nível bancário em todas as transações.' },
@@ -184,16 +232,16 @@ const Login = () => {
             </div>
 
             {/* Gamified Proofs Gallery */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 relative z-10">
               {proofImages.map((img, idx) => (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-white/5 border border-white/10 transition-all duration-500 hover:z-20 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.1)]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <img 
-                    src={img.src} 
-                    alt={img.alt} 
+                  <img
+                    src={img.src}
+                    alt={img.alt}
                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110 filter saturate-[0.8] group-hover:saturate-100"
                   />
                   <div className="absolute bottom-4 left-4 right-4 z-20 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
@@ -215,28 +263,28 @@ const Login = () => {
 
           <div className="container mx-auto max-w-6xl relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              
+
               {/* Creator Info */}
               <div className="space-y-6 md:space-y-8 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-2">
                   <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                   <span className="text-xs font-semibold text-neutral-300 tracking-wide uppercase">Fundador & Desenvolvedor</span>
                 </div>
-                
+
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter text-white leading-tight">
                   Quem está por trás da <br className="hidden sm:block" />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-500">Top Créditos?</span>
                 </h2>
-                
+
                 <p className="text-base md:text-lg text-neutral-400 font-light leading-relaxed max-w-xl mx-auto lg:mx-0">
-                  Sou o <strong className="text-white font-medium">Felipe Top</strong>, especialista em Inteligência Artificial e automações. 
-                  Construo soluções que otimizam o seu tempo e elevo a sua operação para outro nível. 
+                  Sou o <strong className="text-white font-medium">Felipe Top</strong>, especialista em Inteligência Artificial e automações.
+                  Construo soluções que otimizam o seu tempo e elevo a sua operação para outro nível.
                   A Top Créditos nasceu para resolver um problema real com eficiência e transparência.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 max-w-2xl mx-auto lg:mx-0">
                   {/* YouTube Metric */}
-                  <a href="https://youtube.com/@realfelipetop" target="_blank" rel="noopener noreferrer" 
+                  <a href="https://youtube.com/@realfelipetop" target="_blank" rel="noopener noreferrer"
                     className="group flex items-center gap-4 p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] transition-all duration-300">
                     <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform flex-shrink-0">
                       <Youtube className="w-6 h-6" />
@@ -248,7 +296,7 @@ const Login = () => {
                   </a>
 
                   {/* Instagram Metric */}
-                  <a href="https://instagram.com/realfelipetop" target="_blank" rel="noopener noreferrer" 
+                  <a href="https://instagram.com/realfelipetop" target="_blank" rel="noopener noreferrer"
                     className="group flex items-center gap-4 p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] transition-all duration-300">
                     <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform flex-shrink-0">
                       <Instagram className="w-6 h-6" />
@@ -262,20 +310,20 @@ const Login = () => {
               </div>
 
               {/* Creator Visual Showcase */}
-              <div className="relative max-w-md mx-auto lg:max-w-none">
+              <div className="relative max-w-[320px] sm:max-w-md mx-auto lg:max-w-none">
                 <div className="absolute inset-0 bg-gradient-to-tr from-neutral-900 to-transparent rounded-[2rem] md:rounded-[3rem] -rotate-3 scale-[1.02] border border-white/5" />
                 <div className="relative bg-neutral-950 border border-white/10 p-2 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl">
-                  
+
                   {/* Social Profile Mockup */}
                   <div className="bg-black rounded-[1.75rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5">
                     <div className="flex items-center gap-4 md:gap-6 mb-6 md:mb-8">
                       <div className="w-20 h-20 md:w-24 md:h-24 rounded-full p-1 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-500 flex-shrink-0">
                         <div className="w-full h-full rounded-full border-4 border-black overflow-hidden relative">
-                           <img 
-                             src="/felipe-avatar.jpeg" 
-                             alt="Felipe Top" 
-                             className="w-full h-full object-cover"
-                           />
+                          <img
+                            src="/felipe-avatar.jpeg"
+                            alt="Felipe Top"
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       </div>
                       <div className="min-w-0">
@@ -292,8 +340,8 @@ const Login = () => {
                     </div>
 
                     <p className="text-xs md:text-sm text-neutral-300 leading-relaxed mb-4 md:mb-6 font-light">
-                      Dev & Fundador <span className="text-blue-400 hover:underline cursor-pointer">@forfy.ai</span><br/>
-                      Expert em I.A e automações<br/>
+                      Dev & Fundador <span className="text-blue-400 hover:underline cursor-pointer">@forfy.ai</span><br />
+                      Expert em I.A e automações<br />
                       Aqui eu mostro os bastidores da minha startup
                     </p>
 
@@ -328,13 +376,13 @@ const Login = () => {
         <section className="relative px-6 py-20 md:py-32 border-t border-white/5 bg-gradient-to-b from-black via-green-950/5 to-black overflow-hidden">
           {/* Background glow effect */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-green-500/[0.03] rounded-full blur-[120px] pointer-events-none" />
-          
-          <div className="container mx-auto max-w-5xl relative z-10">
-            <div className="relative bg-gradient-to-br from-green-500/10 via-black to-black border border-green-500/20 rounded-[2rem] md:rounded-[3rem] p-8 md:p-12 lg:p-16 overflow-hidden">
+
+          <div className="container mx-auto max-w-5xl relative z-10 px-4">
+            <div className="relative bg-gradient-to-br from-green-500/10 via-black to-black border border-green-500/20 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 lg:p-16 overflow-hidden">
               {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl" />
-              
+
               <div className="relative z-10 text-center max-w-3xl mx-auto">
                 {/* Badge */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 mb-6 md:mb-8">
@@ -345,7 +393,7 @@ const Login = () => {
                 {/* Icon */}
                 <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 md:mb-8 rounded-2xl md:rounded-3xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
                   <svg className="w-10 h-10 md:w-12 md:h-12 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                   </svg>
                 </div>
 
@@ -353,23 +401,23 @@ const Login = () => {
                 <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tighter text-white mb-4 md:mb-6 leading-tight">
                   Grupo de Networking
                 </h2>
-                
+
                 {/* Member count */}
                 <div className="inline-flex items-center gap-2 md:gap-3 mb-6 md:mb-8 flex-wrap justify-center">
                   <div className="flex -space-x-2 md:-space-x-3">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-black flex items-center justify-center text-white text-xs font-bold">
+                      <div key={i} className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-black flex items-center justify-center text-white text-[10px] md:text-xs font-bold">
                         {i}
                       </div>
                     ))}
                   </div>
-                  <span className="text-xl md:text-2xl font-bold text-white">800+</span>
-                  <span className="text-base md:text-lg text-neutral-400">membros ativos</span>
+                  <span className="text-lg md:text-2xl font-bold text-white">800+</span>
+                  <span className="text-sm md:text-lg text-neutral-400">membros ativos</span>
                 </div>
 
                 {/* Description */}
                 <p className="text-base md:text-xl text-neutral-300 font-light leading-relaxed mb-8 md:mb-10 max-w-2xl mx-auto px-4">
-                  Faça parte da nossa comunidade exclusiva de empreendedores, desenvolvedores e entusiastas de IA. 
+                  Faça parte da nossa comunidade exclusiva de empreendedores, desenvolvedores e entusiastas de IA.
                   Troque experiências, aprenda com os melhores e expanda sua rede de contatos.
                 </p>
 
@@ -396,7 +444,7 @@ const Login = () => {
                   className="group inline-flex items-center justify-center gap-2 md:gap-3 h-14 md:h-16 px-8 md:px-12 text-base md:text-lg font-semibold bg-green-500 text-white rounded-full hover:bg-green-400 transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(34,197,94,0.3)] hover:shadow-[0_0_60px_rgba(34,197,94,0.5)]"
                 >
                   <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                   </svg>
                   <span>Entrar no Grupo Agora</span>
                   <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
@@ -414,12 +462,12 @@ const Login = () => {
         <section className="relative px-6 py-40 border-t border-white/5 overflow-hidden">
           {/* Background glow for CTA */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-white/[0.03] rounded-full blur-[100px] pointer-events-none" />
-          
+
           <div className="relative z-10 container mx-auto max-w-3xl text-center">
-            <h2 className="text-5xl md:text-7xl font-bold tracking-tighter text-white mb-8">
+            <h2 className="text-4xl md:text-7xl font-bold tracking-tighter text-white mb-8">
               Pronto para evoluir?
             </h2>
-            <p className="text-xl text-neutral-400 mb-14 font-light max-w-xl mx-auto">
+            <p className="text-lg text-neutral-400 mb-14 font-light max-w-xl mx-auto">
               Adquira seus créditos agora e tenha acesso imediato a todos os recursos.
             </p>
             <button
@@ -437,20 +485,20 @@ const Login = () => {
         <div className="container mx-auto max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8 mb-16">
             {/* Brand Column */}
-            <div className="md:col-span-5 pr-8">
+            <div className="md:col-span-5 pr-0 md:pr-8 text-center md:text-left">
               <h3 className="text-2xl font-bold tracking-tighter text-white mb-6">Top Créditos.</h3>
-              <p className="text-neutral-400 font-light leading-relaxed mb-8 max-w-sm">
+              <p className="text-neutral-400 font-light leading-relaxed mb-8 mx-auto md:mx-0 max-w-sm">
                 A experiência mais premium e minimalista para compra de créditos Lovable do Brasil. Rápido, seguro e focado em você.
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center md:justify-start gap-4">
                 {[
-                  { icon: <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>, url: "https://youtube.com/@realfelipetop" },
-                  { icon: <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>, url: "https://instagram.com/realfelipetop" }
+                  { icon: <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>, url: "https://youtube.com/@realfelipetop" },
+                  { icon: <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>, url: "https://instagram.com/realfelipetop" }
                 ].map((social, idx) => (
-                  <a 
+                  <a
                     key={idx}
-                    href={social.url} 
-                    target="_blank" 
+                    href={social.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300"
                   >
