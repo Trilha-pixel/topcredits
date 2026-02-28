@@ -22,7 +22,7 @@ type Tab = 'overview' | 'orders' | 'customers' | 'products' | 'coupons';
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { orders, resellers: customers, products, stats, isLoading } = useAdminData();
+  const { orders, resellers: customers, products, stats, isLoading, deleteReseller, updateResellerBalance } = useAdminData();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,8 +101,8 @@ const AdminDashboard = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as Tab)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
       <main className="container mx-auto px-4 py-6">
         {activeTab === 'overview' && <OverviewTab stats={stats} orders={orders} />}
         {activeTab === 'orders' && <OrdersTab orders={orders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
-        {activeTab === 'customers' && <CustomersTab customers={customers} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
+        {activeTab === 'customers' && <CustomersTab customers={customers} searchQuery={searchQuery} setSearchQuery={setSearchQuery} deleteReseller={deleteReseller} updateResellerBalance={updateResellerBalance} />}
         {activeTab === 'products' && <ProductsTab products={products} />}
         {activeTab === 'coupons' && <CouponsTab />}
       </main>
@@ -308,8 +308,8 @@ const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-medium text-foreground">{order.user_name || 'Cliente'}</p>
                     <Badge variant="outline" className={`text-xs ${order.status === 'completed' ? 'bg-accent/10 text-accent border-accent/20' :
-                        order.status === 'pending' ? 'bg-warning/10 text-warning border-warning/20' :
-                          'bg-destructive/10 text-destructive border-destructive/20'
+                      order.status === 'pending' ? 'bg-warning/10 text-warning border-warning/20' :
+                        'bg-destructive/10 text-destructive border-destructive/20'
                       }`}>
                       {order.status === 'completed' ? 'Concluído' : order.status === 'pending' ? 'Pendente' : 'Cancelado'}
                     </Badge>
@@ -349,11 +349,53 @@ const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
 };
 
 // Customers Tab Component
-const CustomersTab = ({ customers, searchQuery, setSearchQuery }: any) => {
+const CustomersTab = ({ customers, searchQuery, setSearchQuery, deleteReseller, updateResellerBalance }: any) => {
+  const [balanceModal, setBalanceModal] = useState<{ open: boolean; customer: any | null }>({ open: false, customer: null });
+  const [newBalance, setNewBalance] = useState('');
+  const [balanceReason, setBalanceReason] = useState('');
+  const [savingBalance, setSavingBalance] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
   const filteredCustomers = customers.filter((customer: any) =>
     customer.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     customer.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDeleteCustomer = async (customer: any) => {
+    if (!confirm(`Tem certeza que deseja EXCLUIR o cliente "${customer.full_name}"? Esta ação é irreversível.`)) return;
+    try {
+      await deleteReseller(customer.id);
+      toast.success(`Cliente "${customer.full_name}" excluído.`);
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
+    }
+    setOpenMenuId(null);
+  };
+
+  const openBalanceModal = (customer: any) => {
+    setNewBalance(String(Number(customer.balance || 0).toFixed(2)));
+    setBalanceReason('');
+    setBalanceModal({ open: true, customer });
+    setOpenMenuId(null);
+  };
+
+  const handleSaveBalance = async () => {
+    if (!balanceModal.customer) return;
+    setSavingBalance(true);
+    try {
+      await updateResellerBalance(
+        balanceModal.customer.id,
+        parseFloat(newBalance),
+        balanceReason || 'Ajuste manual pelo admin'
+      );
+      toast.success(`Saldo de "${balanceModal.customer.full_name}" atualizado para R$ ${parseFloat(newBalance).toFixed(2)}`);
+      setBalanceModal({ open: false, customer: null });
+    } catch (err: any) {
+      toast.error('Erro ao atualizar saldo: ' + err.message);
+    } finally {
+      setSavingBalance(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -382,14 +424,50 @@ const CustomersTab = ({ customers, searchQuery, setSearchQuery }: any) => {
                   <p className="text-sm font-medium text-foreground">{customer.full_name}</p>
                   <p className="text-xs text-muted-foreground">{customer.email}</p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+                {/* Dropdown Menu */}
+                <div className="relative">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setOpenMenuId(openMenuId === customer.id ? null : customer.id)}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                  {openMenuId === customer.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border bg-card shadow-xl py-1">
+                        <button
+                          onClick={() => openBalanceModal(customer)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Editar Saldo
+                        </button>
+                        <div className="h-px bg-border mx-2 my-1" />
+                        <button
+                          onClick={() => handleDeleteCustomer(customer)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Excluir Cliente
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <div className="rounded bg-secondary/50 p-2">
+                <div
+                  className="rounded bg-secondary/50 p-2 cursor-pointer hover:bg-secondary/80 transition-colors"
+                  onClick={() => openBalanceModal(customer)}
+                >
                   <p className="text-xs text-muted-foreground">Saldo</p>
-                  <p className="text-sm font-bold text-accent">R$ {Number(customer.balance || 0).toFixed(2)}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm font-bold text-accent">R$ {Number(customer.balance || 0).toFixed(2)}</p>
+                    <Edit className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                  </div>
                 </div>
                 <div className="rounded bg-secondary/50 p-2">
                   <p className="text-xs text-muted-foreground">Pedidos</p>
@@ -404,6 +482,65 @@ const CustomersTab = ({ customers, searchQuery, setSearchQuery }: any) => {
           ))
         )}
       </div>
+
+      {/* Balance Edit Modal */}
+      {balanceModal.open && balanceModal.customer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-2xl mx-4">
+            <h2 className="text-lg font-semibold text-foreground mb-1">Editar Saldo</h2>
+            <p className="text-sm text-muted-foreground mb-5">
+              {balanceModal.customer.full_name} — {balanceModal.customer.email}
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Saldo Atual</label>
+                <p className="text-2xl font-light text-accent">R$ {Number(balanceModal.customer.balance || 0).toFixed(2)}</p>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Novo Saldo (R$)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newBalance}
+                  onChange={(e) => setNewBalance(e.target.value)}
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Motivo (opcional)</label>
+                <Input
+                  value={balanceReason}
+                  onChange={(e) => setBalanceReason(e.target.value)}
+                  placeholder="Ex: Bônus promocional, Correção, etc."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setBalanceModal({ open: false, customer: null })}
+                  className="flex-1"
+                  disabled={savingBalance}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveBalance}
+                  className="flex-1"
+                  disabled={savingBalance || !newBalance}
+                >
+                  {savingBalance ? 'Salvando...' : 'Atualizar Saldo'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
