@@ -98,10 +98,10 @@ const HelpCenter = () => {
                 Licenças
               </button>
               <button
-                onClick={() => navigate('/academy')}
+                onClick={() => navigate('/pacotes')}
                 className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
               >
-                Academy
+                Pacotes
               </button>
               <button
                 onClick={() => navigate('/ajuda')}
@@ -115,13 +115,15 @@ const HelpCenter = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/ajuda')}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary/15 text-primary hover:bg-primary/25 hover:scale-105 transition-all border border-primary/25 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                title="Suporte"
               >
                 <Headphones className="h-4 w-4" />
+                <span className="text-xs font-semibold hidden lg:inline">Suporte</span>
               </button>
-              
+
               <div className="h-5 w-px bg-white/10" />
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 rounded-full bg-white/5 hover:bg-white/10 pl-1 pr-3 py-1 transition-colors">

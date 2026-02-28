@@ -107,12 +107,13 @@ const MyOrders = () => {
               <div
                 className="absolute h-[calc(100%-8px)] top-1 rounded-full bg-white/10 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
                 style={{
-                  width: 'calc(20% - 4px)',
-                  left: `${location.pathname === '/dashboard' ? '2px' :
-                    location.pathname === '/pedidos' ? 'calc(20% + 2px)' :
-                      location.pathname === '/licencas' ? 'calc(40% + 2px)' :
-                        location.pathname === '/academy' ? 'calc(60% + 2px)' : 'calc(80% + 2px)'
-                    }`
+                  width: '120px',
+                  left: '4px',
+                  transform: `translateX(${location.pathname === '/dashboard' ? '0' :
+                      location.pathname === '/pedidos' ? '120px' :
+                        location.pathname === '/licencas' ? '240px' :
+                          location.pathname === '/pacotes' ? '360px' : '480px'
+                    })`
                 }}
               />
 
@@ -120,7 +121,7 @@ const MyOrders = () => {
                 { label: 'Início', path: '/dashboard' },
                 { label: 'Meus Pedidos', path: '/pedidos' },
                 { label: 'Licenças', path: '/licencas' },
-                { label: 'Academy', path: '/academy' },
+                { label: 'Pacotes', path: '/pacotes' },
                 { label: 'Suporte', path: '/ajuda' },
               ].map((link) => {
                 const isActive = location.pathname === link.path;
@@ -128,7 +129,7 @@ const MyOrders = () => {
                   <button
                     key={link.path}
                     onClick={() => navigate(link.path)}
-                    className={`relative z-10 px-5 py-1.5 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                    className={`relative z-10 w-[120px] py-1.5 text-center text-sm font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
                       }`}
                   >
                     {link.label}
@@ -141,10 +142,11 @@ const MyOrders = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate('/ajuda')}
-                className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary/20 hover:scale-110 transition-all border border-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-primary/15 text-primary hover:bg-primary/25 hover:scale-105 transition-all border border-primary/25 shadow-[0_0_20px_rgba(168,85,247,0.2)]"
                 title="Suporte"
               >
                 <Headphones className="h-4 w-4" />
+                <span className="text-xs font-semibold hidden lg:inline">Suporte</span>
               </button>
 
               <div className="h-5 w-px bg-white/10" />
