@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import {
   LayoutDashboard, Package, Users, ShoppingCart,
   LogOut, Search, MoreVertical, Check, X,
-  Eye, Edit, Trash2, Plus, Tag
+  Eye, Edit, Trash2, Plus, Tag, Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -252,101 +252,6 @@ const OverviewTab = ({ stats, orders }: any) => {
   );
 };
 
-// Orders Tab Component
-const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  const filteredOrders = orders.filter((order: any) => {
-    const matchesSearch =
-      order.user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.lovable_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.product_name?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar pedidos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="flex gap-2">
-          {['all', 'pending', 'completed', 'cancelled'].map((status) => (
-            <Button
-              key={status}
-              variant={statusFilter === status ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter(status)}
-            >
-              {status === 'all' ? 'Todos' : status === 'pending' ? 'Pendentes' : status === 'completed' ? 'Concluídos' : 'Cancelados'}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Orders List */}
-      <div className="space-y-2">
-        {filteredOrders.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Nenhum pedido encontrado
-          </div>
-        ) : (
-          filteredOrders.map((order: any) => (
-            <div key={order.id} className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-foreground">{order.user_name || 'Cliente'}</p>
-                    <Badge variant="outline" className={`text-xs ${order.status === 'completed' ? 'bg-accent/10 text-accent border-accent/20' :
-                      order.status === 'pending' ? 'bg-warning/10 text-warning border-warning/20' :
-                        'bg-destructive/10 text-destructive border-destructive/20'
-                      }`}>
-                      {order.status === 'completed' ? 'Concluído' : order.status === 'pending' ? 'Pendente' : 'Cancelado'}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2">{order.lovable_email}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>{order.product_name}</span>
-                    <span>•</span>
-                    <span>{new Date(order.created_at).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-foreground mb-2">R$ {Number(order.price_at_purchase).toFixed(2)}</p>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {order.status === 'pending' && (
-                      <>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-accent">
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive">
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
 
 // Customers Tab Component
 const CustomersTab = ({ customers, searchQuery, setSearchQuery, deleteReseller, updateResellerBalance }: any) => {
@@ -541,6 +446,342 @@ const CustomersTab = ({ customers, searchQuery, setSearchQuery, deleteReseller, 
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Order Details Modal Component
+const OrderDetailsModal = ({ order, onClose, onUpdateStatus }: any) => {
+  if (!order) return null;
+
+  const shortId = `#${order.id.split('-')[0].toUpperCase().substring(0, 4)}`;
+  const dateStr = new Date(order.created_at).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  const paidValue = Number(order.price_at_purchase);
+  const discountApplied = Number(order.discount_applied || 0);
+  const hasDiscount = discountApplied > 0;
+  const originalValue = hasDiscount ? paidValue + discountApplied : paidValue;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Detalhes do Pedido {shortId}</h2>
+            <p className="text-sm text-muted-foreground">{dateStr}</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Informações do Cliente */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Informações do Cliente</h3>
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Nome</p>
+              <p className="text-sm font-medium text-foreground">{order.user_name || 'Cliente'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">E-mail</p>
+              <p className="text-sm font-medium text-foreground">{order.lovable_email}</p>
+            </div>
+          </div>
+
+          {/* Informações do Produto */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Produto</h3>
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Item Comprado</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground">{order.product_name}</p>
+                <Badge variant="outline" className="text-[10px] uppercase py-0 px-1.5 h-auto">
+                  {order.product_name?.toLowerCase().includes('api') ? 'API' : 'Créditos'}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Status</p>
+              <Badge variant="outline" className={`text-xs font-medium ${order.status === 'completed' ? 'bg-[#062417] text-[#34d399] border-[#064e3b]' :
+                order.status === 'pending' ? 'bg-[#2b1f0c] text-[#fbbf24] border-[#78350f]' :
+                  'bg-destructive/10 text-destructive border-destructive/20'
+                }`}>
+                {order.status === 'completed' ? 'Concluído' : order.status === 'pending' ? 'Pendente' : 'Cancelado'}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Financeiro */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Financeiro</h3>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Valor Bruto:</span>
+              <span className="text-foreground">R$ {originalValue.toFixed(2)}</span>
+            </div>
+            {hasDiscount && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-emerald-500">Desconto:</span>
+                <span className="text-emerald-500">- R$ {discountApplied.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center text-base font-semibold pt-2 border-t border-border">
+              <span className="text-foreground">Valor Final Pago:</span>
+              <span className="text-foreground">R$ {paidValue.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* ID de Controle */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Técnico</h3>
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Order UUID</p>
+              <p className="text-[11px] font-mono text-muted-foreground break-all">{order.id}</p>
+            </div>
+            {order.external_control_id && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">ID Externo</p>
+                <p className="text-[11px] font-mono text-muted-foreground">{order.external_control_id}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Ações Rápidas */}
+        {order.status === 'pending' && (
+          <div className="flex gap-3 mt-8 pt-6 border-t border-border">
+            <Button
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+              onClick={() => onUpdateStatus(order.id, 'completed')}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Aprovar Pedido
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+              onClick={() => onUpdateStatus(order.id, 'cancelled')}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancelar Pedido
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Orders Tab Component
+const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const { updateOrderStatus } = useAdminData();
+
+  const filteredOrders = orders.filter((order: any) => {
+    const s = searchQuery.toLowerCase();
+    const matchesSearch =
+      order.user_name?.toLowerCase().includes(s) ||
+      order.lovable_email?.toLowerCase().includes(s) ||
+      order.product_name?.toLowerCase().includes(s) ||
+      order.id?.toLowerCase().includes(s); // Permitir busca por UUID parcial
+
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusCounts = (status: string) => {
+    if (status === 'all') return orders.length;
+    return orders.filter((o: any) => o.status === status).length;
+  };
+
+  const handleCopyEmail = (email: string) => {
+    navigator.clipboard.writeText(email);
+    toast.success('E-mail copiado para a área de transferência');
+    setOpenMenuId(null);
+  };
+
+  const handleViewDetails = (order: any) => {
+    setSelectedOrder(order);
+    setOpenMenuId(null);
+  };
+
+  const handleUpdateStatus = async (orderId: string, status: 'completed' | 'cancelled') => {
+    try {
+      const deliveryLink = status === 'completed' ? prompt('Link de entrega (opcional):') || '' : '';
+      await updateOrderStatus(orderId, status, deliveryLink);
+      toast.success(`Pedido ${status === 'completed' ? 'aprovado' : 'cancelado'} com sucesso.`);
+      setSelectedOrder(null);
+    } catch (err: any) {
+      toast.error('Erro ao atualizar status: ' + err.message);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
+        <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-hide">
+          {['all', 'pending', 'completed', 'cancelled'].map((status) => {
+            const count = getStatusCounts(status);
+            const label = status === 'all' ? 'Todos' : status === 'pending' ? 'Pendentes' : status === 'completed' ? 'Concluídos' : 'Cancelados';
+            return (
+              <Button
+                key={status}
+                variant={statusFilter === status ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter(status)}
+                className="whitespace-nowrap rounded-md font-medium"
+              >
+                {label} <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${statusFilter === status ? 'bg-background/20 text-current' : 'bg-secondary text-muted-foreground'}`}>{count}</span>
+              </Button>
+            );
+          })}
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, email ou ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 border-border bg-card/50"
+          />
+        </div>
+      </div>
+
+      {/* Orders Table */}
+      <div className="rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden text-[#d1d5db]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="text-xs text-muted-foreground uppercase bg-secondary/30 sticky top-0 border-b border-border">
+              <tr>
+                <th className="px-5 py-4 font-medium tracking-wider">Pedido</th>
+                <th className="px-5 py-4 font-medium tracking-wider">Cliente</th>
+                <th className="px-5 py-4 font-medium tracking-wider">Produto</th>
+                <th className="px-5 py-4 font-medium tracking-wider text-right">Financeiro</th>
+                <th className="px-5 py-4 font-medium tracking-wider text-center">Status</th>
+                <th className="px-5 py-4 font-medium tracking-wider text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground text-sm">
+                    Nenhum pedido encontrado
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order: any) => {
+                  const isApi = order.product_name?.toLowerCase().includes('api');
+                  const productTag = isApi ? 'API' : 'Créditos';
+                  const shortId = `#${order.id.split('-')[0].toUpperCase().substring(0, 4)}`;
+                  const dateStr = new Date(order.created_at).toLocaleString('pt-BR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                  });
+                  const paidValue = Number(order.price_at_purchase);
+                  const discountApplied = Number(order.discount_applied || 0);
+                  const hasDiscount = discountApplied > 0;
+                  const originalValue = hasDiscount ? paidValue + discountApplied : paidValue;
+
+                  return (
+                    <tr key={order.id} className="hover:bg-secondary/10 transition-colors group">
+                      <td className="px-5 py-3 align-middle">
+                        <div className="font-semibold text-foreground">{shortId}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{dateStr}</div>
+                      </td>
+                      <td className="px-5 py-3 align-middle">
+                        <div className="font-medium text-foreground">{order.user_name || 'Cliente'}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">{order.lovable_email}</div>
+                      </td>
+                      <td className="px-5 py-3 align-middle">
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground">{order.product_name}</span>
+                          <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded border border-border text-muted-foreground bg-secondary/30">
+                            {productTag}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 align-middle text-right">
+                        {hasDiscount ? (
+                          <div className="flex flex-col items-end justify-center">
+                            <span className="text-[11px] text-muted-foreground line-through opacity-70">
+                              R$ {originalValue.toFixed(2)}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              R$ {paidValue.toFixed(2)}
+                            </span>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20">
+                                {order.coupon_id ? 'Cupom Aplicado' : 'Desconto Aplicado'}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="font-medium text-foreground">
+                            R$ {paidValue.toFixed(2)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 align-middle text-center">
+                        <Badge variant="outline" className={`text-xs font-medium px-2 py-0.5 whitespace-nowrap ${order.status === 'completed' ? 'bg-[#062417] text-[#34d399] border-[#064e3b]' :
+                          order.status === 'pending' ? 'bg-[#2b1f0c] text-[#fbbf24] border-[#78350f]' :
+                            'bg-destructive/10 text-destructive border-destructive/20'
+                          }`}>
+                          {order.status === 'completed' ? 'Concluído' : order.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-3 align-middle text-right relative">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-secondary/50 rounded-md"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === order.id ? null : order.id);
+                          }}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        {openMenuId === order.id && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                            <div className="absolute right-6 top-10 mt-1 z-50 w-40 rounded-md border border-border bg-card shadow-2xl py-1 text-left">
+                              <button
+                                onClick={() => handleViewDetails(order)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                Ver Detalhes
+                              </button>
+                              <button
+                                onClick={() => handleCopyEmail(order.lovable_email)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                              >
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                Copiar E-mail
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onUpdateStatus={handleUpdateStatus}
+      />
     </div>
   );
 };
