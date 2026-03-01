@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminData } from '@/hooks/useAdminData';
 import { useNavigate } from 'react-router-dom';
@@ -791,7 +791,22 @@ const ProductsTab = ({ products }: any) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [platformFilter, setPlatformFilter] = useState<string>('all');
   const { updateProduct, createProduct } = useAdminData();
+
+  // Extract unique platforms
+  const platforms = useMemo(() => {
+    const uniquePlatforms = new Set<string>();
+    products.forEach((p: any) => {
+      if (p.platform) uniquePlatforms.add(p.platform);
+    });
+    return ['all', ...Array.from(uniquePlatforms).sort()];
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    if (platformFilter === 'all') return products;
+    return products.filter((p: any) => p.platform === platformFilter);
+  }, [products, platformFilter]);
 
   const handleEdit = (product: any) => {
     setSelectedProduct(product);
@@ -816,31 +831,65 @@ const ProductsTab = ({ products }: any) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-sm text-muted-foreground uppercase tracking-wider">Produtos</h2>
+      <div className="flex flex-col sm:flex-row justify-between gap-3 items-start sm:items-center">
+        <div>
+          <h2 className="text-sm text-muted-foreground uppercase tracking-wider mb-2 sm:mb-0">Produtos</h2>
+        </div>
         <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Produto
         </Button>
       </div>
 
+      {/* Platform Filters */}
+      {platforms.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {platforms.map((platform) => {
+            const count = platform === 'all'
+              ? products.length
+              : products.filter((p: any) => p.platform === platform).length;
+
+            const label = platform === 'all' ? 'Todos' : platform;
+
+            return (
+              <Button
+                key={platform}
+                variant={platformFilter === platform ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPlatformFilter(platform)}
+                className="whitespace-nowrap rounded-md font-medium"
+              >
+                {label} <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${platformFilter === platform ? 'bg-background/20 text-current' : 'bg-secondary text-muted-foreground'}`}>{count}</span>
+              </Button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products.length === 0 ? (
-          <div className="col-span-3 text-center py-12 text-muted-foreground text-sm">
-            Nenhum produto cadastrado
+        {filteredProducts.length === 0 ? (
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 text-muted-foreground text-sm border border-dashed border-border rounded-lg">
+            Nenhum produto encontrado para este filtro.
           </div>
         ) : (
-          products.map((product: any) => (
-            <div key={product.id} className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4">
+          filteredProducts.map((product: any) => (
+            <div key={product.id} className="rounded-lg border border-border bg-card/50 backdrop-blur-sm p-4 relative group">
               <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{product.name}</p>
-                  <Badge variant="outline" className={`text-xs mt-1 ${product.active ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-muted text-muted-foreground'
+                <div className="pr-6">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-foreground">{product.name}</p>
+                    {product.platform && (
+                      <Badge variant="outline" className="text-[10px] bg-secondary/30 text-muted-foreground uppercase px-1.5 py-0 h-auto font-semibold">
+                        {product.platform}
+                      </Badge>
+                    )}
+                  </div>
+                  <Badge variant="outline" className={`text-xs mt-1.5 ${product.active ? 'bg-[#062417] text-[#34d399] border-[#064e3b]' : 'bg-muted text-muted-foreground'
                     }`}>
                     {product.active ? 'Ativo' : 'Inativo'}
                   </Badge>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -912,6 +961,8 @@ interface ProductModalProps {
   title: string;
 }
 
+const PREDEFINED_PLATFORMS = ['Lovable', 'Cursor', 'Bolt', 'ChatGPT', 'V0'];
+
 const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, title }) => {
   const [formData, setFormData] = useState({
     name: product?.name || '',
@@ -920,11 +971,16 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     active: product?.active ?? true,
     category: product?.category || 'credits',
     unit_cost_brl: product?.unit_cost_brl || '',
+    platform: product?.platform || '',
   });
+  const [isCustomPlatform, setIsCustomPlatform] = useState(
+    product?.platform && !PREDEFINED_PLATFORMS.includes(product.platform)
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
     if (product) {
+      const isCustom = product.platform && !PREDEFINED_PLATFORMS.includes(product.platform);
       setFormData({
         name: product.name || '',
         credits_amount: product.credits_amount || '',
@@ -932,9 +988,22 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         active: product.active ?? true,
         category: product.category || 'credits',
         unit_cost_brl: product.unit_cost_brl || '',
+        platform: product.platform || '',
       });
+      setIsCustomPlatform(isCustom);
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        credits_amount: '',
+        price: '',
+        active: true,
+        category: 'credits',
+        unit_cost_brl: '',
+        platform: '',
+      });
+      setIsCustomPlatform(false);
     }
-  }, [product]);
+  }, [product, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -948,6 +1017,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
         active: formData.active,
         category: formData.category,
         unit_cost_brl: formData.unit_cost_brl ? parseFloat(formData.unit_cost_brl) : 0,
+        platform: formData.platform || null,
       };
 
       console.log('Salvando produto:', productData);
@@ -965,12 +1035,28 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     }
   };
 
+  const handlePlatformChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val === 'custom') {
+      setIsCustomPlatform(true);
+      setFormData({ ...formData, platform: '' });
+    } else {
+      setIsCustomPlatform(false);
+      setFormData({ ...formData, platform: val });
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0" disabled={isLoading}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -1023,16 +1109,43 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
             </p>
           </div>
 
-          <div>
-            <label className="text-sm text-muted-foreground">Categoria</label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="credits">Créditos</option>
-              <option value="api_extension">Extensão de API</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Plataforma</label>
+              <select
+                value={isCustomPlatform ? 'custom' : formData.platform}
+                onChange={handlePlatformChange}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Nenhuma / Omitir</option>
+                {PREDEFINED_PLATFORMS.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+                <option value="custom">Outra (Digitar)</option>
+              </select>
+
+              {isCustomPlatform && (
+                <Input
+                  value={formData.platform}
+                  onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                  placeholder="Nome da plataforma"
+                  required
+                  className="mt-2"
+                  autoFocus
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Categoria</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="credits">Créditos</option>
+                <option value="api_extension">Extensão de API</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

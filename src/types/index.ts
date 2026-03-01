@@ -24,6 +24,7 @@ export interface Product {
     credits_amount: number;
     price: number;
     active: boolean;
+    platform?: string;
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
