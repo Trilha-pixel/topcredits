@@ -1,7 +1,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Order, Profile, Wallet, Transaction, Product } from '@/types';
+import { Order, Profile, Wallet, Transaction, Product, Platform, ProductCategory } from '@/types';
 
 // Função auxiliar para logging detalhado
 const logSupabaseError = (context: string, error: any, data: any) => {
@@ -41,7 +41,7 @@ export const useAdminData = () => {
         queryKey: ['admin_orders'],
         queryFn: async () => {
             console.log('📦 Fetching orders...');
-            
+
             try {
                 const { data, error } = await supabase.rpc('get_all_orders_admin', {
                     p_status: null,
@@ -72,22 +72,22 @@ export const useAdminData = () => {
         queryKey: ['admin_stats'],
         queryFn: async () => {
             console.log('📊 Fetching stats...');
-            
+
             try {
                 const { data, error } = await supabase.rpc('get_admin_stats');
-                
+
                 if (error) {
                     logSupabaseError('get_admin_stats', error, data);
                     throw error;
                 }
 
                 logSupabaseSuccess('get_admin_stats', data);
-                
+
                 // A função retorna TABLE, então sempre será um array
                 if (Array.isArray(data) && data.length > 0) {
                     return data[0];
                 }
-                
+
                 // Fallback para dados vazios
                 console.warn('⚠️ Stats returned empty, using fallback');
                 return {
@@ -120,12 +120,12 @@ export const useAdminData = () => {
         queryKey: ['admin_resellers'],
         queryFn: async () => {
             console.log('👥 Fetching customers...');
-            
+
             try {
                 const { data, error } = await supabase.rpc('get_all_customers_admin', {
                     p_search: null
                 });
-                
+
                 if (error) {
                     logSupabaseError('get_all_customers_admin', error, data);
                     throw error;
@@ -151,7 +151,7 @@ export const useAdminData = () => {
         queryKey: ['admin_transactions'],
         queryFn: async () => {
             console.log('💳 Fetching transactions...');
-            
+
             try {
                 const { data, error } = await supabase
                     .from('transactions')
@@ -182,13 +182,13 @@ export const useAdminData = () => {
         queryKey: ['admin_products'],
         queryFn: async () => {
             console.log('🛍️ Fetching products...');
-            
+
             try {
                 const { data, error } = await supabase
                     .from('products')
                     .select('*')
                     .order('id');
-                
+
                 if (error) {
                     logSupabaseError('products', error, data);
                     throw error;
@@ -206,6 +206,50 @@ export const useAdminData = () => {
         retry: 1,
     });
 
+    // Fetch platforms
+    const { data: platforms = [], isLoading: loadingPlatforms, error: platformsError } = useQuery({
+        queryKey: ['admin_platforms'],
+        queryFn: async () => {
+            console.log('🏷️ Fetching platforms...');
+            try {
+                const { data, error } = await supabase
+                    .from('platforms')
+                    .select('*')
+                    .order('name');
+                if (error) throw error;
+                return (data || []) as Platform[];
+            } catch (err) {
+                console.error('❌ Exception in platforms fetch:', err);
+                throw err;
+            }
+        },
+        staleTime: 60000,
+        refetchOnWindowFocus: false,
+        retry: 1,
+    });
+
+    // Fetch product categories
+    const { data: productCategories = [], isLoading: loadingCategories, error: categoriesError } = useQuery({
+        queryKey: ['admin_categories'],
+        queryFn: async () => {
+            console.log('📂 Fetching product categories...');
+            try {
+                const { data, error } = await supabase
+                    .from('product_categories')
+                    .select('*')
+                    .order('name');
+                if (error) throw error;
+                return (data || []) as ProductCategory[];
+            } catch (err) {
+                console.error('❌ Exception in product categories fetch:', err);
+                throw err;
+            }
+        },
+        staleTime: 60000,
+        refetchOnWindowFocus: false,
+        retry: 1,
+    });
+
     // Log de erros consolidado
     if (ordersError || statsError || resellersError || productsError) {
         console.group('🚨 Admin Data Errors Summary');
@@ -213,11 +257,13 @@ export const useAdminData = () => {
         if (statsError) console.error('Stats error:', statsError);
         if (resellersError) console.error('Resellers error:', resellersError);
         if (productsError) console.error('Products error:', productsError);
+        if (platformsError) console.error('Platforms error:', platformsError);
+        if (categoriesError) console.error('Categories error:', categoriesError);
         console.groupEnd();
     }
 
     // Apenas stats, orders e resellers são essenciais para o loading inicial
-    const isLoading = loadingOrders || loadingResellers || loadingProducts || loadingStats;
+    const isLoading = loadingOrders || loadingResellers || loadingProducts || loadingStats || loadingPlatforms || loadingCategories;
 
     // Log do estado final
     console.log('📈 Admin Data State:', {
@@ -246,7 +292,7 @@ export const useAdminData = () => {
             p_delivery_link: deliveryLink || null,
             p_delivery_code: deliveryCode || null
         });
-        
+
         if (error) throw error;
 
         // Refresh data
@@ -259,15 +305,15 @@ export const useAdminData = () => {
 
     const updateProduct = async (id: number, updates: Partial<Product>) => {
         console.log('updateProduct chamado:', { id, updates });
-        
+
         const { data, error } = await supabase
             .from('products')
             .update(updates)
             .eq('id', id)
             .select();
-        
+
         console.log('updateProduct resultado:', { data, error });
-        
+
         if (error) throw error;
         await queryClient.invalidateQueries({ queryKey: ['admin_products'] });
     };
@@ -281,8 +327,8 @@ export const useAdminData = () => {
     };
 
     const deleteReseller = async (userId: string) => {
-        const { error } = await supabase.rpc('admin_delete_customer', { 
-            p_user_id: userId 
+        const { error } = await supabase.rpc('admin_delete_customer', {
+            p_user_id: userId
         });
         if (error) throw error;
         await queryClient.invalidateQueries({ queryKey: ['admin_resellers'] });
@@ -300,6 +346,30 @@ export const useAdminData = () => {
         await queryClient.invalidateQueries({ queryKey: ['admin_stats'] });
     };
 
+    const createPlatform = async (name: string) => {
+        const { error } = await supabase.from('platforms').insert({ name });
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ['admin_platforms'] });
+    };
+
+    const deletePlatform = async (id: string) => {
+        const { error } = await supabase.from('platforms').delete().eq('id', id);
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ['admin_platforms'] });
+    };
+
+    const createCategory = async (name: string, value: string) => {
+        const { error } = await supabase.from('product_categories').insert({ name, value });
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ['admin_categories'] });
+    };
+
+    const deleteCategory = async (id: string) => {
+        const { error } = await supabase.from('product_categories').delete().eq('id', id);
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ['admin_categories'] });
+    };
+
     return {
         orders,
         resellers,
@@ -308,10 +378,16 @@ export const useAdminData = () => {
         products,
         stats,
         isLoading,
+        platforms,
+        productCategories,
         updateOrderStatus,
         updateProduct,
         createProduct,
         deleteReseller,
-        updateResellerBalance
+        updateResellerBalance,
+        createPlatform,
+        deletePlatform,
+        createCategory,
+        deleteCategory
     };
 };

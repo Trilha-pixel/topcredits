@@ -27,6 +27,19 @@ export interface Product {
     platform?: string;
 }
 
+export interface Platform {
+    id: string;
+    name: string;
+    created_at: string;
+}
+
+export interface ProductCategory {
+    id: string;
+    name: string;
+    value: string;
+    created_at: string;
+}
+
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
 
 export interface Order {

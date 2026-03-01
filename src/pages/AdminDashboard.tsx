@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import {
   LayoutDashboard, Package, Users, ShoppingCart,
   LogOut, Search, MoreVertical, Check, X,
-  Eye, Edit, Trash2, Plus, Tag, Copy
+  Eye, Edit, Trash2, Plus, Tag, Copy, Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,12 +17,26 @@ import { DiagnosticPanel } from '@/components/admin/DiagnosticPanel';
 import CouponsTab from '@/components/admin/CouponsTab';
 import { toast } from 'sonner';
 
-type Tab = 'overview' | 'orders' | 'customers' | 'products' | 'coupons';
+type Tab = 'overview' | 'orders' | 'customers' | 'products' | 'coupons' | 'categories';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { orders, resellers: customers, products, stats, isLoading, deleteReseller, updateResellerBalance } = useAdminData();
+  const {
+    orders,
+    resellers: customers,
+    products,
+    stats,
+    isLoading,
+    deleteReseller,
+    updateResellerBalance,
+    platforms,
+    productCategories,
+    createPlatform,
+    deletePlatform,
+    createCategory,
+    deleteCategory
+  } = useAdminData();
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,6 +70,7 @@ const AdminDashboard = () => {
     { id: 'customers', label: 'Clientes', icon: Users },
     { id: 'products', label: 'Produtos', icon: ShoppingCart },
     { id: 'coupons', label: 'Cupons', icon: Tag },
+    { id: 'categories', label: 'Ajustes de Catálogo', icon: Layers },
   ];
 
   return (
@@ -119,8 +134,18 @@ const AdminDashboard = () => {
         {activeTab === 'overview' && <OverviewTab stats={stats} orders={orders} />}
         {activeTab === 'orders' && <OrdersTab orders={orders} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
         {activeTab === 'customers' && <CustomersTab customers={customers} searchQuery={searchQuery} setSearchQuery={setSearchQuery} deleteReseller={deleteReseller} updateResellerBalance={updateResellerBalance} />}
-        {activeTab === 'products' && <ProductsTab products={products} />}
+        {activeTab === 'products' && <ProductsTab products={products} platforms={platforms} productCategories={productCategories} />}
         {activeTab === 'coupons' && <CouponsTab />}
+        {activeTab === 'categories' && (
+          <CategoriesTab
+            platforms={platforms || []}
+            productCategories={productCategories || []}
+            onCreatePlatform={createPlatform}
+            onDeletePlatform={deletePlatform}
+            onCreateCategory={createCategory}
+            onDeleteCategory={deleteCategory}
+          />
+        )}
       </main>
     </div>
   );
@@ -787,15 +812,15 @@ const OrdersTab = ({ orders, searchQuery, setSearchQuery }: any) => {
 };
 
 // Products Tab Component
-const ProductsTab = ({ products }: any) => {
+const ProductsTab = ({ products, platforms, productCategories }: any) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const { updateProduct, createProduct } = useAdminData();
 
-  // Extract unique platforms
-  const platforms = useMemo(() => {
+  // Extract unique platforms for the filter pills
+  const availableFilters = useMemo(() => {
     const uniquePlatforms = new Set<string>();
     products.forEach((p: any) => {
       if (p.platform) uniquePlatforms.add(p.platform);
@@ -842,9 +867,9 @@ const ProductsTab = ({ products }: any) => {
       </div>
 
       {/* Platform Filters */}
-      {platforms.length > 1 && (
+      {availableFilters.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {platforms.map((platform) => {
+          {availableFilters.map((platform) => {
             const count = platform === 'all'
               ? products.length
               : products.filter((p: any) => p.platform === platform).length;
@@ -935,6 +960,8 @@ const ProductsTab = ({ products }: any) => {
         onClose={() => setIsCreateModalOpen(false)}
         onSave={createProduct}
         title="Novo Produto"
+        platforms={platforms}
+        productCategories={productCategories}
       />
 
       {/* Edit Product Modal */}
@@ -947,6 +974,8 @@ const ProductsTab = ({ products }: any) => {
         onSave={(data) => updateProduct(selectedProduct.id, data)}
         product={selectedProduct}
         title="Editar Produto"
+        platforms={platforms}
+        productCategories={productCategories}
       />
     </div>
   );
@@ -959,11 +988,11 @@ interface ProductModalProps {
   onSave: (data: any) => Promise<void>;
   product?: any;
   title: string;
+  platforms: any[];
+  productCategories: any[];
 }
 
-const PREDEFINED_PLATFORMS = ['Lovable', 'Cursor', 'Bolt', 'ChatGPT', 'V0'];
-
-const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, title }) => {
+const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, product, title, platforms, productCategories }) => {
   const [formData, setFormData] = useState({
     name: product?.name || '',
     credits_amount: product?.credits_amount || '',
@@ -973,14 +1002,16 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     unit_cost_brl: product?.unit_cost_brl || '',
     platform: product?.platform || '',
   });
+  const isPlatformPredefined = (plat: string) => platforms.some(p => p.name === plat);
+
   const [isCustomPlatform, setIsCustomPlatform] = useState(
-    product?.platform && !PREDEFINED_PLATFORMS.includes(product.platform)
+    product?.platform && !isPlatformPredefined(product.platform)
   );
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
     if (product) {
-      const isCustom = product.platform && !PREDEFINED_PLATFORMS.includes(product.platform);
+      const isCustom = product.platform && !isPlatformPredefined(product.platform);
       setFormData({
         name: product.name || '',
         credits_amount: product.credits_amount || '',
@@ -1118,8 +1149,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="">Nenhuma / Omitir</option>
-                {PREDEFINED_PLATFORMS.map(p => (
-                  <option key={p} value={p}>{p}</option>
+                {platforms?.map((p: any) => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
                 ))}
                 <option value="custom">Outra (Digitar)</option>
               </select>
@@ -1142,8 +1173,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="credits">Créditos</option>
-                <option value="api_extension">Extensão de API</option>
+                {productCategories?.map((c: any) => (
+                  <option key={c.id} value={c.value}>{c.name}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -1184,5 +1216,200 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, pr
     </div>
   );
 };
+
+// --- Categories Tab Component ---
+const CategoriesTab = ({
+  platforms,
+  productCategories,
+  onCreatePlatform,
+  onDeletePlatform,
+  onCreateCategory,
+  onDeleteCategory
+}: any) => {
+  const [newPlatformName, setNewPlatformName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryValue, setNewCategoryValue] = useState('');
+
+  const handleCreatePlatform = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlatformName.trim()) return;
+    try {
+      await onCreatePlatform(newPlatformName.trim());
+      setNewPlatformName('');
+      toast.success('Plataforma criada');
+    } catch (err: any) {
+      toast.error('Erro ao criar: ' + err.message);
+    }
+  };
+
+  const handleDeletePlatform = async (id: string) => {
+    if (!confirm('Deseja excluir esta plataforma?')) return;
+    try {
+      await onDeletePlatform(id);
+      toast.success('Plataforma excluída');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim() || !newCategoryValue.trim()) return;
+    try {
+      // Basic slugification for the value if user typed spaces
+      const val = newCategoryValue.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      await onCreateCategory(newCategoryName.trim(), val);
+      setNewCategoryName('');
+      setNewCategoryValue('');
+      toast.success('Categoria criada');
+    } catch (err: any) {
+      toast.error('Erro ao criar: ' + err.message);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, value: string) => {
+    if (value === 'credits' || value === 'api_extension') {
+      toast.error('Não é possível excluir categorias do sistema.');
+      return; // Basic safeguard
+    }
+    if (!confirm('Deseja excluir esta categoria?')) return;
+    try {
+      await onDeleteCategory(id);
+      toast.success('Categoria excluída');
+    } catch (err: any) {
+      toast.error('Erro ao excluir: ' + err.message);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      {/* PLATFORMS */}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-sm font-medium text-foreground uppercase tracking-wider mb-1">Plataformas</h2>
+          <p className="text-xs text-muted-foreground">Gerencie as opções de plataformas para os produtos.</p>
+        </div>
+
+        <form onSubmit={handleCreatePlatform} className="flex gap-2">
+          <Input
+            placeholder="Nova plataforma..."
+            value={newPlatformName}
+            onChange={(e) => setNewPlatformName(e.target.value)}
+            className="bg-card w-full"
+          />
+          <Button type="submit" size="sm" className="whitespace-nowrap">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar
+          </Button>
+        </form>
+
+        <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-secondary/50 border-b border-border text-xs uppercase text-muted-foreground font-medium">
+              <tr>
+                <th className="px-4 py-3">Nome</th>
+                <th className="px-4 py-3 w-16 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {platforms?.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="px-4 py-6 text-center text-muted-foreground text-xs">Nenhuma plataforma cadastrada.</td>
+                </tr>
+              ) : (
+                platforms.map((p: any) => (
+                  <tr key={p.id} className="hover:bg-secondary/20 transition-colors group">
+                    <td className="px-4 py-3 font-medium text-foreground">{p.name}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeletePlatform(p.id)}
+                        className="h-8 w-8 p-0 text-destructive/70 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* CATEGORIES */}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-sm font-medium text-foreground uppercase tracking-wider mb-1">Categorias</h2>
+          <p className="text-xs text-muted-foreground">Grupos internos para classificação de produtos.</p>
+        </div>
+
+        <form onSubmit={handleCreateCategory} className="flex gap-2">
+          <Input
+            placeholder="Nome (Ex: Licenças)"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            className="bg-card w-1/2"
+            required
+          />
+          <Input
+            placeholder="ID (Ex: licenses)"
+            value={newCategoryValue}
+            onChange={(e) => setNewCategoryValue(e.target.value)}
+            className="bg-card w-1/2 font-mono text-xs"
+            required
+          />
+          <Button type="submit" size="sm" className="whitespace-nowrap">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar
+          </Button>
+        </form>
+
+        <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-secondary/50 border-b border-border text-xs uppercase text-muted-foreground font-medium">
+              <tr>
+                <th className="px-4 py-3">Nome (Exibição)</th>
+                <th className="px-4 py-3 text-muted-foreground font-mono">ID / Valor (Sistema)</th>
+                <th className="px-4 py-3 w-16 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {productCategories?.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground text-xs">Nenhuma categoria cadastrada.</td>
+                </tr>
+              ) : (
+                productCategories.map((c: any) => (
+                  <tr key={c.id} className="hover:bg-secondary/20 transition-colors group">
+                    <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{c.value}</td>
+                    <td className="px-4 py-3 text-right">
+                      {c.value !== 'credits' && c.value !== 'api_extension' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteCategory(c.id, c.value)}
+                          className="h-8 w-8 p-0 text-destructive/70 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+// --- End Categories Tab Component ---
 
 export default AdminDashboard;
